@@ -514,6 +514,107 @@ h1 {
   letter-spacing: 0.6px;
   gap: 12px;
 }
+.logout-button {
+  border: 0;
+  padding: 0;
+  color: #587761;
+  background: transparent;
+  font: inherit;
+  cursor: pointer;
+}
+.logout-button:hover {
+  color: #173e36;
+  text-decoration: underline;
+}
+.login-page {
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: minmax(0, 1.08fr) minmax(420px, 0.92fr);
+  background: #f4f6f4;
+}
+.login-intro {
+  position: relative;
+  overflow: hidden;
+  background: #173e36;
+  color: #e7eee8;
+  padding: 12vh 10vw;
+}
+.login-intro img {
+  margin-bottom: 64px;
+}
+.login-intro .eyebrow {
+  color: #a6beb2;
+}
+.login-intro h1 {
+  margin-top: 26px;
+  color: #fff;
+  font-size: clamp(36px, 4vw, 62px);
+  line-height: 1.35;
+  letter-spacing: 3px;
+  font-weight: 400;
+}
+.login-intro h1 em {
+  color: #e8c985;
+  font-style: normal;
+}
+.login-intro-copy {
+  margin-top: 28px;
+  color: #aac1b6;
+  font-size: 14px;
+}
+.login-watermark {
+  position: absolute;
+  left: 10vw;
+  bottom: 52px;
+  color: #6f9787;
+  font-size: 10px;
+  letter-spacing: 3px;
+}
+.login-card {
+  width: min(440px, calc(100% - 56px));
+  align-self: center;
+  justify-self: center;
+  padding: 24px 0;
+}
+.login-card-heading {
+  margin-bottom: 38px;
+}
+.login-card-heading h2 {
+  font-size: 30px;
+  font-weight: 500;
+  letter-spacing: 1px;
+}
+.login-card-heading p:last-child {
+  margin-top: 12px;
+  color: #849087;
+  font-size: 13px;
+}
+.login-card .el-form-item {
+  margin-bottom: 22px;
+}
+.login-card .el-form-item__label {
+  color: #53645a;
+  font-size: 12px;
+}
+.login-card .el-input__wrapper {
+  min-height: 46px;
+  box-shadow: 0 0 0 1px #dae3db inset;
+}
+.login-submit {
+  width: 100%;
+  height: 46px;
+  margin-top: 14px;
+  letter-spacing: 1px;
+}
+.login-submit .el-icon {
+  margin-left: auto;
+}
+.login-security-note {
+  margin-top: 28px;
+  color: #97a198;
+  font-size: 11px;
+  line-height: 1.8;
+}
 .dependency-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -675,5 +776,34 @@ h1 {
   *::after {
     transition: none !important;
     animation: none !important;
+  }
+}
+@media (max-width: 800px) {
+  .login-page {
+    grid-template-columns: 1fr;
+  }
+  .login-intro {
+    min-height: 270px;
+    padding: 38px 28px;
+  }
+  .login-intro img {
+    width: 38px;
+    height: 38px;
+    margin-bottom: 28px;
+  }
+  .login-intro h1 {
+    font-size: 32px;
+    margin-top: 12px;
+  }
+  .login-intro-copy {
+    margin-top: 12px;
+  }
+  .login-watermark {
+    left: 28px;
+    bottom: 22px;
+  }
+  .login-card {
+    width: min(440px, calc(100% - 40px));
+    padding: 44px 0 56px;
   }
 }

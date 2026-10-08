@@ -1,10 +1,18 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import AdminLayout from '@/layouts/AdminLayout.vue'
+import AdminLoginView from '@/views/AdminLoginView.vue'
+import { useAdminAuthStore } from '@/stores/admin-auth'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   scrollBehavior: () => ({ top: 0 }),
   routes: [
+    {
+      path: '/login',
+      name: 'admin-login',
+      component: AdminLoginView,
+      meta: { title: '管理员登录' },
+    },
     {
       path: '/',
       component: AdminLayout,
@@ -30,6 +38,20 @@ const router = createRouter({
       ],
     },
   ],
+})
+
+router.beforeEach(async (to) => {
+  const auth = useAdminAuthStore()
+  if (to.name === 'admin-login') {
+    if (auth.isAuthenticated) return '/overview'
+    return true
+  }
+  try {
+    if (await auth.ensureSession()) return true
+  } catch {
+    auth.clear()
+  }
+  return { name: 'admin-login', query: { redirect: to.fullPath } }
 })
 
 router.afterEach((to) => {

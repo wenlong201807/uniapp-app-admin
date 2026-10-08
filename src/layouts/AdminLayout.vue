@@ -1,13 +1,16 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { useRoute } from 'vue-router'
-import { ElButton, ElIcon, ElTag } from 'element-plus'
+import { useRoute, useRouter } from 'vue-router'
+import { ElButton, ElIcon, ElTag, ElMessage } from 'element-plus'
 import { Connection, Fold, Grid, Expand, ArrowRight } from '@element-plus/icons-vue'
 import { appConfig } from '@/config/app'
 import { useAppStore } from '@/stores/app'
+import { useAdminAuthStore } from '@/stores/admin-auth'
 
 const app = useAppStore()
+const auth = useAdminAuthStore()
 const route = useRoute()
+const router = useRouter()
 const status = computed(() =>
   app.checking ? '检查中' : app.health ? '服务正常' : app.healthError ? '连接异常' : '待检测',
 )
@@ -15,6 +18,15 @@ const navigation = [
   { path: '/overview', title: '工作台', icon: Grid },
   { path: '/system', title: '服务连接', icon: Connection },
 ]
+
+async function logout() {
+  try {
+    await auth.logout()
+    await router.push('/login')
+  } catch (error) {
+    ElMessage.error(error instanceof Error ? error.message : '退出失败')
+  }
+}
 </script>
 
 <template>
@@ -76,7 +88,12 @@ const navigation = [
         <RouterView />
       </main>
       <footer class="workspace-footer">
-        <span>此刻 · 让管理井然有序</span><span>ADMIN CONSOLE / {{ appConfig.version }}</span>
+        <span>此刻 · 让管理井然有序</span>
+        <span
+          >管理员：{{ auth.admin?.displayName || auth.admin?.email }} ·
+          <button class="logout-button" type="button" @click="logout">退出</button></span
+        >
+        <span>ADMIN CONSOLE / {{ appConfig.version }}</span>
       </footer>
     </div>
   </div>
