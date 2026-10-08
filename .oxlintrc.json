@@ -1,0 +1,12 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "plugins": ["typescript", "vue", "import"],
+  "categories": { "correctness": "error" },
+  "env": { "browser": true, "es2024": true },
+  "ignorePatterns": ["dist", "node_modules", "artifacts"],
+  "rules": {
+    "typescript/no-explicit-any": "error",
+    "vue/no-side-effects-in-computed-properties": "error",
+    "vue/no-export-in-script-setup": "error"
+  }
+}
