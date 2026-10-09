@@ -2,29 +2,37 @@
 import { computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElButton, ElIcon, ElTag, ElMessage } from 'element-plus'
-import { Connection, Fold, Grid, Expand, ArrowRight } from '@element-plus/icons-vue'
+import { Connection, Fold, Grid, Expand, ArrowRight, Lock } from '@element-plus/icons-vue'
 import { appConfig } from '@/config/app'
 import { useAppStore } from '@/stores/app'
 import { useAdminAuthStore } from '@/stores/admin-auth'
+import { useAdminRoutesStore } from '@/stores/admin-routes'
 
 const app = useAppStore()
 const auth = useAdminAuthStore()
+const adminRoutes = useAdminRoutesStore()
 const route = useRoute()
 const router = useRouter()
 const status = computed(() =>
   app.checking ? '检查中' : app.health ? '服务正常' : app.healthError ? '连接异常' : '待检测',
 )
-const navigation = [
-  { path: '/overview', title: '工作台', icon: Grid },
-  { path: '/system', title: '服务连接', icon: Connection },
-]
+const iconMap = { dashboard: Grid, connection: Connection, shield: Lock }
+const navigation = computed(() =>
+  adminRoutes.visibleRoutes.map((item) => ({ ...item, icon: iconMap[item.icon] })),
+)
 
 async function logout() {
   try {
     await auth.logout()
-    await router.push('/login')
   } catch (error) {
-    ElMessage.error(error instanceof Error ? error.message : '退出失败')
+    ElMessage.warning(
+      error instanceof Error
+        ? `本地已退出，服务端注销失败：${error.message}`
+        : '本地已退出，服务端注销失败',
+    )
+  } finally {
+    adminRoutes.reset()
+    await router.replace('/login')
   }
 }
 </script>
@@ -38,7 +46,7 @@ async function logout() {
         <span class="sidebar-copy"><strong>此刻</strong><small>管理控制台</small></span>
       </RouterLink>
       <div class="nav-caption sidebar-copy">WORKSPACE</div>
-      <nav class="navigation">
+      <nav class="navigation" aria-label="管理导航">
         <RouterLink
           v-for="item in navigation"
           :key="item.path"
@@ -52,6 +60,7 @@ async function logout() {
           <span v-if="route.path === item.path" class="nav-dot sidebar-copy"></span>
         </RouterLink>
       </nav>
+      <p v-if="adminRoutes.error" class="sidebar-notice sidebar-copy">{{ adminRoutes.error }}</p>
       <div class="sidebar-footer sidebar-copy">
         <span class="environment-dot"></span>
         <span>管理端基础工程</span>

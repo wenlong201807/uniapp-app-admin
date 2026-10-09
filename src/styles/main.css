@@ -807,3 +807,19 @@ h1 {
     padding: 44px 0 56px;
   }
 }
+
+.bootstrap-alert {
+  margin-bottom: 16px;
+}
+.sidebar-notice {
+  margin: 18px 12px 0;
+  color: #e8c985;
+  font-size: 11px;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+.session-error-page {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+}

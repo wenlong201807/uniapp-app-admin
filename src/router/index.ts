@@ -2,6 +2,9 @@ import { createRouter, createWebHistory } from 'vue-router'
 import AdminLayout from '@/layouts/AdminLayout.vue'
 import AdminLoginView from '@/views/AdminLoginView.vue'
 import { useAdminAuthStore } from '@/stores/admin-auth'
+import { staticAdminRoutes } from '@/services/admin-routes'
+import { useAdminRoutesStore } from '@/stores/admin-routes'
+import { ApiError } from '@/services/http'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -14,10 +17,22 @@ const router = createRouter({
       meta: { title: '管理员登录' },
     },
     {
+      path: '/session-error',
+      name: 'session-error',
+      component: () => import('@/views/SessionErrorView.vue'),
+      meta: { title: '连接异常' },
+    },
+    {
       path: '/',
       component: AdminLayout,
       children: [
         { path: '', redirect: '/overview' },
+        {
+          path: 'forbidden',
+          name: 'forbidden',
+          component: () => import('@/views/ForbiddenView.vue'),
+          meta: { title: '无访问权限' },
+        },
         {
           path: 'overview',
           name: 'overview',
@@ -42,15 +57,34 @@ const router = createRouter({
 
 router.beforeEach(async (to) => {
   const auth = useAdminAuthStore()
+  const navigation = useAdminRoutesStore()
+  if (to.name === 'session-error') return auth.isAuthenticated ? true : '/login'
   if (to.name === 'admin-login') {
+    if (!auth.isAuthenticated) navigation.reset()
     if (auth.isAuthenticated) return '/overview'
     return true
   }
   try {
-    if (await auth.ensureSession()) return true
-  } catch {
+    if (await auth.ensureSession()) {
+      const token = auth.accessToken
+      if (!token) return '/login'
+      await navigation.load(token)
+      if (auth.accessToken !== token) {
+        navigation.reset()
+        return '/login'
+      }
+      if (to.name === 'overview' || to.name === 'system') {
+        if (!navigation.visibleRoutes.some((item) => item.path === to.path)) return '/forbidden'
+      }
+      return true
+    }
+  } catch (error) {
+    if (!(error instanceof ApiError) || (error.status !== 401 && error.status !== 403)) {
+      if (auth.isAuthenticated) return '/session-error'
+    }
     auth.clear()
   }
+  navigation.reset()
   return { name: 'admin-login', query: { redirect: to.fullPath } }
 })
 
@@ -59,3 +93,5 @@ router.afterEach((to) => {
 })
 
 export default router
+
+export { staticAdminRoutes }
