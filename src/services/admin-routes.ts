@@ -26,6 +26,13 @@ export const staticAdminRoutes: AdminRouteRecord[] = [
     icon: 'connection',
     permission: 'admin:system:health',
   },
+  {
+    path: '/device-keys',
+    name: 'device-keys',
+    title: '设备密钥',
+    icon: 'shield',
+    permission: 'admin:security:device-keys',
+  },
 ]
 
 export function getAdminRoutes(token: string) {

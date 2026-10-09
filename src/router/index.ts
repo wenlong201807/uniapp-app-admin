@@ -46,6 +46,12 @@ const router = createRouter({
           meta: { title: '服务连接' },
         },
         {
+          path: 'device-keys',
+          name: 'device-keys',
+          component: () => import('@/views/DeviceKeysView.vue'),
+          meta: { title: '设备密钥' },
+        },
+        {
           path: ':pathMatch(.*)*',
           component: () => import('@/views/NotFoundView.vue'),
           meta: { title: '页面未找到' },
@@ -73,7 +79,7 @@ router.beforeEach(async (to) => {
         navigation.reset()
         return '/login'
       }
-      if (to.name === 'overview' || to.name === 'system') {
+      if (to.name === 'overview' || to.name === 'system' || to.name === 'device-keys') {
         if (!navigation.visibleRoutes.some((item) => item.path === to.path)) return '/forbidden'
       }
       return true
