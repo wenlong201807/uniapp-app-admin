@@ -143,10 +143,12 @@ export function putAdminAiQuota(
   })
 }
 export function getAdminAiSettings(token: string) {
-  return request<{ dailyTokenLimit: number | null; dailyCallLimit: number | null }>(
-    '/admin/ai/settings',
-    { token },
-  )
+  return request<{
+    overrideTokenLimit: number | null
+    overrideCallLimit: number | null
+    effectiveTokenLimit: number | null
+    effectiveCallLimit: number | null
+  }>('/admin/ai/settings', { token })
 }
 export function putAdminAiSettings(
   token: string,

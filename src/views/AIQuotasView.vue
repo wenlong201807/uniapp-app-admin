@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, reactive, ref } from 'vue'
+import { computed, onMounted, reactive, ref } from 'vue'
 import {
   ElButton,
   ElDialog,
@@ -34,10 +34,22 @@ function formatLimit(value: number | null) {
 const settingsLoading = ref(false)
 const settingsSaving = ref(false)
 const settingsForm = reactive({
-  dailyTokenLimit: null as number | null,
-  dailyCallLimit: null as number | null,
+  overrideTokenLimit: null as number | null,
+  overrideCallLimit: null as number | null,
 })
+const effectiveTokenLimit = ref<number | null>(null)
+const effectiveCallLimit = ref<number | null>(null)
 let settingsRevision = 0
+
+function formatEffective(value: number | null) {
+  return value === null ? '未设置' : value.toLocaleString('zh-CN')
+}
+
+const effectiveSource = computed(() =>
+  settingsForm.overrideTokenLimit !== null || settingsForm.overrideCallLimit !== null
+    ? '数据库覆盖'
+    : '环境变量默认',
+)
 
 async function loadSettings() {
   if (!auth.accessToken) return
@@ -47,8 +59,10 @@ async function loadSettings() {
   try {
     const result = await getAdminAiSettings(token)
     if (current !== settingsRevision || token !== auth.accessToken) return
-    settingsForm.dailyTokenLimit = result.dailyTokenLimit
-    settingsForm.dailyCallLimit = result.dailyCallLimit
+    settingsForm.overrideTokenLimit = result.overrideTokenLimit
+    settingsForm.overrideCallLimit = result.overrideCallLimit
+    effectiveTokenLimit.value = result.effectiveTokenLimit
+    effectiveCallLimit.value = result.effectiveCallLimit
   } catch (error) {
     toastError(error, '全局额度加载失败')
   } finally {
@@ -60,10 +74,10 @@ async function saveSettings() {
   if (!auth.accessToken || settingsSaving.value) return
   settingsSaving.value = true
   try {
-    // PUT 为全量替换：两字段必须齐发，留空序列化为 null（回退环境变量默认）
+    // PUT 为全量替换：两字段必须齐发；override 语义下空=null 即清除覆盖，回退环境变量默认
     await putAdminAiSettings(auth.accessToken, {
-      dailyTokenLimit: settingsForm.dailyTokenLimit ?? null,
-      dailyCallLimit: settingsForm.dailyCallLimit ?? null,
+      dailyTokenLimit: settingsForm.overrideTokenLimit ?? null,
+      dailyCallLimit: settingsForm.overrideCallLimit ?? null,
     })
     ElMessage.success('全局默认额度已保存')
     await loadSettings()
@@ -186,30 +200,35 @@ onMounted(initialize)
       class="quota-form"
       v-loading="settingsLoading"
     >
-      <ElFormItem label="每日 Token 上限">
+      <ElFormItem label="每日 Token 上限（数据库覆盖）">
         <ElInputNumber
-          v-model="settingsForm.dailyTokenLimit"
+          v-model="settingsForm.overrideTokenLimit"
           :min="1"
           :max="100000000"
+          :precision="0"
           :value-on-clear="null"
-          placeholder="留空 = 使用环境变量默认"
+          placeholder="留空 = 无覆盖，使用环境变量默认"
           style="width: 100%"
         />
       </ElFormItem>
-      <ElFormItem label="每日调用次数上限">
+      <ElFormItem label="每日调用次数上限（数据库覆盖）">
         <ElInputNumber
-          v-model="settingsForm.dailyCallLimit"
+          v-model="settingsForm.overrideCallLimit"
           :min="1"
           :max="100000000"
+          :precision="0"
           :value-on-clear="null"
-          placeholder="留空 = 使用环境变量默认"
+          placeholder="留空 = 无覆盖，使用环境变量默认"
           style="width: 100%"
         />
       </ElFormItem>
     </ElForm>
     <p class="muted quota-hint">
-      保存会整体覆盖全局默认额度（两项同时提交）；未在数据库覆盖时回退到环境变量
-      AI_DAILY_TOKEN_LIMIT / AI_DAILY_CALL_LIMIT。
+      当前生效：{{ formatEffective(effectiveTokenLimit) }} /
+      {{ formatEffective(effectiveCallLimit) }}（{{
+        effectiveSource
+      }}）；表单留空保存即清除覆盖（两项同时提交），无覆盖时回退环境变量 AI_DAILY_TOKEN_LIMIT /
+      AI_DAILY_CALL_LIMIT。
     </p>
   </section>
   <section class="panel">
@@ -274,6 +293,7 @@ onMounted(initialize)
           v-model="quotaForm.dailyTokenLimit"
           :min="1"
           :max="100000000"
+          :precision="0"
           :value-on-clear="null"
           placeholder="留空 = 跟随全局"
           style="width: 100%"
@@ -284,6 +304,7 @@ onMounted(initialize)
           v-model="quotaForm.dailyCallLimit"
           :min="1"
           :max="100000000"
+          :precision="0"
           :value-on-clear="null"
           placeholder="留空 = 跟随全局"
           style="width: 100%"

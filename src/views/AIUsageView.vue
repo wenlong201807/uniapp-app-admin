@@ -21,10 +21,8 @@ const rows = ref<AdminAiUsageRow[]>([])
 let revision = 0
 
 function toDateInput(timestamp: number): string {
-  const date = new Date(timestamp)
-  const month = String(date.getMonth() + 1).padStart(2, '0')
-  const day = String(date.getDate()).padStart(2, '0')
-  return `${date.getFullYear()}-${month}-${day}`
+  // UTC 口径：服务端按 UTC 日分桶聚合，本地时区截断会错位一天
+  return new Date(timestamp).toISOString().slice(0, 10)
 }
 const from = ref(toDateInput(Date.now() - 29 * 86400000))
 const to = ref(toDateInput(Date.now()))
