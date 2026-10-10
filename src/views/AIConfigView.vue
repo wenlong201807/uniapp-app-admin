@@ -25,6 +25,7 @@ import {
   removeAdminAiProvider,
   updateAdminAiModel,
   updateAdminAiProvider,
+  type AdminAiEnvFallback,
   type AdminAiModel,
   type AdminAiProvider,
 } from '@/services/admin-ai'
@@ -36,10 +37,20 @@ const rows = ref<AdminAiProvider[]>([])
 const total = ref(0)
 const page = ref(1)
 const pageSize = ref(20)
+const envFallback = ref<AdminAiEnvFallback>({
+  GPT: { configured: false, suppressed: false },
+  GLM: { configured: false, suppressed: false },
+})
 let revision = 0
 
 function toastError(error: unknown, fallback: string) {
   ElMessage.error(error instanceof Error ? error.message : fallback)
+}
+
+function envFallbackText(kind: 'GPT' | 'GLM') {
+  const status = envFallback.value[kind]
+  if (!status.configured) return '未配置'
+  return status.suppressed ? '已配置，但被数据库供应商行抑制' : '生效中'
 }
 
 async function load() {
@@ -55,6 +66,7 @@ async function load() {
     if (current !== revision || token !== auth.accessToken) return
     rows.value = result.items
     total.value = result.total
+    envFallback.value = result.envFallback
   } catch (error) {
     toastError(error, '供应商列表加载失败')
   } finally {
@@ -290,6 +302,11 @@ onMounted(load)
     title="配置提示"
     description="服务端未配置 AI_CONFIG_SECRET 时无法保存；DB 存在同类型供应商行会抑制环境变量兜底（禁用即真禁用）。"
   />
+  <div class="env-fallback">
+    <p class="env-title">环境变量兜底（只读）</p>
+    <p class="env-row">OpenAI：{{ envFallbackText('GPT') }}</p>
+    <p class="env-row">智谱 GLM：{{ envFallbackText('GLM') }}</p>
+  </div>
   <section class="panel">
     <div class="section-title">
       <div>
@@ -475,6 +492,22 @@ onMounted(load)
 <style scoped>
 .config-alert {
   margin-bottom: 24px;
+}
+.env-fallback {
+  border: 1px solid var(--el-border-color-lighter);
+  border-radius: 6px;
+  padding: 12px 16px;
+  margin-bottom: 24px;
+}
+.env-title {
+  margin: 0 0 4px;
+  font-size: 13px;
+  font-weight: 600;
+}
+.env-row {
+  margin: 0;
+  font-size: 13px;
+  color: var(--el-text-color-secondary);
 }
 .model-subpanel {
   padding: 4px 8px 12px;

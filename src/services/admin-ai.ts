@@ -17,11 +17,16 @@ export interface AdminAiProvider {
   createdAt: string
   models: AdminAiModel[]
 }
+export interface AdminAiEnvFallback {
+  GPT: { configured: boolean; suppressed: boolean }
+  GLM: { configured: boolean; suppressed: boolean }
+}
 export interface AdminAiProviderPage {
   items: AdminAiProvider[]
   total: number
   page: number
   pageSize: number
+  envFallback: AdminAiEnvFallback
 }
 
 export function getAdminAiProviders(
