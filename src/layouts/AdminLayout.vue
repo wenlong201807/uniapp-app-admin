@@ -12,6 +12,7 @@ import {
   Picture,
   Document,
   Bell,
+  ChatDotRound,
 } from '@element-plus/icons-vue'
 import { appConfig } from '@/config/app'
 import { useAppStore } from '@/stores/app'
@@ -33,6 +34,7 @@ const iconMap = {
   media: Picture,
   audit: Document,
   bell: Bell,
+  ai: ChatDotRound,
 }
 const navigation = computed(() =>
   adminRoutes.visibleRoutes.map((item) => ({ ...item, icon: iconMap[item.icon] })),

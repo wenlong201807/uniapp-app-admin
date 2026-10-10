@@ -1,6 +1,13 @@
 import { isRecord, request } from './http'
 
-export type AdminRouteIcon = 'dashboard' | 'connection' | 'shield' | 'media' | 'audit' | 'bell'
+export type AdminRouteIcon =
+  | 'dashboard'
+  | 'connection'
+  | 'shield'
+  | 'media'
+  | 'audit'
+  | 'bell'
+  | 'ai'
 
 export interface AdminRouteRecord {
   path: string
@@ -67,6 +74,13 @@ export const staticAdminRoutes: AdminRouteRecord[] = [
     title: '媒体分享',
     icon: 'media',
     permission: 'admin:content:shares',
+  },
+  {
+    path: '/ai-config',
+    name: 'ai-config',
+    title: 'AI 模型',
+    icon: 'ai',
+    permission: 'admin:ai:config',
   },
 ]
 
