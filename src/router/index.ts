@@ -88,6 +88,18 @@ const router = createRouter({
           meta: { title: 'AI 模型' },
         },
         {
+          path: 'ai-usage',
+          name: 'ai-usage',
+          component: () => import('@/views/AIUsageView.vue'),
+          meta: { title: 'AI 用量' },
+        },
+        {
+          path: 'ai-quotas',
+          name: 'ai-quotas',
+          component: () => import('@/views/AIQuotasView.vue'),
+          meta: { title: 'AI 额度' },
+        },
+        {
           path: ':pathMatch(.*)*',
           component: () => import('@/views/NotFoundView.vue'),
           meta: { title: '页面未找到' },
@@ -124,7 +136,9 @@ router.beforeEach(async (to) => {
         to.name === 'security-events' ||
         to.name === 'push-devices' ||
         to.name === 'media-shares' ||
-        to.name === 'ai-config'
+        to.name === 'ai-config' ||
+        to.name === 'ai-usage' ||
+        to.name === 'ai-quotas'
       ) {
         if (!navigation.visibleRoutes.some((item) => item.path === to.path)) return '/forbidden'
       }
