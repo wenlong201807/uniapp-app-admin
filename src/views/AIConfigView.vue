@@ -402,6 +402,7 @@ onMounted(load)
     v-model="providerDialog"
     :title="editingProviderId ? '编辑供应商' : '新增供应商'"
     width="560px"
+    :close-on-click-modal="false"
   >
     <ElForm :model="providerForm" label-position="top">
       <ElFormItem label="供应商类型">
@@ -439,7 +440,7 @@ onMounted(load)
       </ElFormItem>
     </ElForm>
     <template #footer>
-      <ElButton @click="providerDialog = false">取消</ElButton>
+      <ElButton :disabled="providerSaving" @click="providerDialog = false">取消</ElButton>
       <ElButton type="primary" :loading="providerSaving" @click="submitProvider">保存</ElButton>
     </template>
   </ElDialog>
@@ -448,6 +449,7 @@ onMounted(load)
     v-model="modelDialog"
     :title="modelProvider ? `为「${modelProvider.name}」新增模型` : '新增模型'"
     width="520px"
+    :close-on-click-modal="false"
   >
     <ElForm :model="modelForm" label-position="top">
       <ElFormItem label="模型标识">
@@ -464,7 +466,7 @@ onMounted(load)
       </ElFormItem>
     </ElForm>
     <template #footer>
-      <ElButton @click="modelDialog = false">取消</ElButton>
+      <ElButton :disabled="modelSaving" @click="modelDialog = false">取消</ElButton>
       <ElButton type="primary" :loading="modelSaving" @click="submitModel">保存</ElButton>
     </template>
   </ElDialog>
