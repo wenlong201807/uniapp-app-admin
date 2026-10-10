@@ -52,6 +52,36 @@ const router = createRouter({
           meta: { title: '设备密钥' },
         },
         {
+          path: 'media',
+          name: 'media',
+          component: () => import('@/views/MediaView.vue'),
+          meta: { title: '媒体管理' },
+        },
+        {
+          path: 'sessions',
+          name: 'sessions',
+          component: () => import('@/views/SessionsView.vue'),
+          meta: { title: '设备会话' },
+        },
+        {
+          path: 'security-events',
+          name: 'security-events',
+          component: () => import('@/views/SecurityEventsView.vue'),
+          meta: { title: '安全审计' },
+        },
+        {
+          path: 'push-devices',
+          name: 'push-devices',
+          component: () => import('@/views/PushDevicesView.vue'),
+          meta: { title: '推送设备' },
+        },
+        {
+          path: 'media-shares',
+          name: 'media-shares',
+          component: () => import('@/views/MediaSharesView.vue'),
+          meta: { title: '媒体分享' },
+        },
+        {
           path: ':pathMatch(.*)*',
           component: () => import('@/views/NotFoundView.vue'),
           meta: { title: '页面未找到' },
@@ -79,7 +109,16 @@ router.beforeEach(async (to) => {
         navigation.reset()
         return '/login'
       }
-      if (to.name === 'overview' || to.name === 'system' || to.name === 'device-keys') {
+      if (
+        to.name === 'overview' ||
+        to.name === 'system' ||
+        to.name === 'device-keys' ||
+        to.name === 'media' ||
+        to.name === 'sessions' ||
+        to.name === 'security-events' ||
+        to.name === 'push-devices' ||
+        to.name === 'media-shares'
+      ) {
         if (!navigation.visibleRoutes.some((item) => item.path === to.path)) return '/forbidden'
       }
       return true

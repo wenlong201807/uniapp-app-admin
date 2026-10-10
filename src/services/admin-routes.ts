@@ -1,6 +1,6 @@
 import { isRecord, request } from './http'
 
-export type AdminRouteIcon = 'dashboard' | 'connection' | 'shield'
+export type AdminRouteIcon = 'dashboard' | 'connection' | 'shield' | 'media' | 'audit' | 'bell'
 
 export interface AdminRouteRecord {
   path: string
@@ -32,6 +32,41 @@ export const staticAdminRoutes: AdminRouteRecord[] = [
     title: '设备密钥',
     icon: 'shield',
     permission: 'admin:security:device-keys',
+  },
+  {
+    path: '/media',
+    name: 'media',
+    title: '媒体管理',
+    icon: 'media',
+    permission: 'admin:content:media',
+  },
+  {
+    path: '/sessions',
+    name: 'sessions',
+    title: '设备会话',
+    icon: 'shield',
+    permission: 'admin:security:sessions',
+  },
+  {
+    path: '/security-events',
+    name: 'security-events',
+    title: '安全审计',
+    icon: 'audit',
+    permission: 'admin:security:audit',
+  },
+  {
+    path: '/push-devices',
+    name: 'push-devices',
+    title: '推送设备',
+    icon: 'bell',
+    permission: 'admin:notifications:devices',
+  },
+  {
+    path: '/media-shares',
+    name: 'media-shares',
+    title: '媒体分享',
+    icon: 'media',
+    permission: 'admin:content:shares',
   },
 ]
 
