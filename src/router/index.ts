@@ -100,6 +100,12 @@ const router = createRouter({
           meta: { title: 'AI 额度' },
         },
         {
+          path: 'ai-sessions',
+          name: 'ai-sessions',
+          component: () => import('@/views/AISessionsView.vue'),
+          meta: { title: 'AI 会话' },
+        },
+        {
           path: ':pathMatch(.*)*',
           component: () => import('@/views/NotFoundView.vue'),
           meta: { title: '页面未找到' },
@@ -138,7 +144,8 @@ router.beforeEach(async (to) => {
         to.name === 'media-shares' ||
         to.name === 'ai-config' ||
         to.name === 'ai-usage' ||
-        to.name === 'ai-quotas'
+        to.name === 'ai-quotas' ||
+        to.name === 'ai-sessions'
       ) {
         if (!navigation.visibleRoutes.some((item) => item.path === to.path)) return '/forbidden'
       }

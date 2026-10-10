@@ -96,6 +96,13 @@ export const staticAdminRoutes: AdminRouteRecord[] = [
     icon: 'ai',
     permission: 'admin:ai:quota',
   },
+  {
+    path: '/ai-sessions',
+    name: 'ai-sessions',
+    title: 'AI 会话',
+    icon: 'ai',
+    permission: 'admin:ai:sessions',
+  },
 ]
 
 export function getAdminRoutes(token: string) {
