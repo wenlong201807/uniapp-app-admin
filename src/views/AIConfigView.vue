@@ -8,6 +8,7 @@ import {
   ElFormItem,
   ElInput,
   ElMessage,
+  ElMessageBox,
   ElOption,
   ElRadio,
   ElSelect,
@@ -165,11 +166,15 @@ async function submitProvider() {
 }
 
 async function removeProvider(row: AdminAiProvider) {
-  if (
-    !auth.accessToken ||
-    !window.confirm(`删除供应商“${row.name}”？其下 ${row.models.length} 个模型配置将一并删除。`)
+  if (!auth.accessToken) return
+  const confirmed = await ElMessageBox.confirm(
+    `删除供应商“${row.name}”？其下 ${row.models.length} 个模型配置将一并删除。`,
+    '删除确认',
+    { type: 'warning', confirmButtonText: '删除', cancelButtonText: '取消' },
   )
-    return
+    .then(() => true)
+    .catch(() => false)
+  if (!confirmed) return
   try {
     await removeAdminAiProvider(auth.accessToken, row.id)
     ElMessage.success('供应商已删除')
