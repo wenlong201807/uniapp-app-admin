@@ -33,6 +33,7 @@ function formatSize(bytes: number) {
     : `${(bytes / (1024 * 1024)).toFixed(2)} MiB`
 }
 function formatMedia(row: AdminMedia) {
+  if (row.kind === 'AUDIO') return `${Math.ceil(row.durationSeconds || 0)} 秒 · ${row.mimeType}`
   return row.kind === 'VIDEO' && row.durationSeconds
     ? `${row.width} × ${row.height} · ${Math.ceil(row.durationSeconds)} 秒`
     : `${row.width} × ${row.height}`
@@ -85,7 +86,9 @@ onMounted(load)
     <div>
       <p class="eyebrow">MEDIA OPERATIONS</p>
       <h1>媒体管理</h1>
-      <p class="page-description">查看私有照片与视频的元数据、归属和存储占用。</p>
+      <p class="page-description">
+        查看私有照片、视频与录音的元数据、归属和存储占用；转写仅显示状态，不展示正文。
+      </p>
     </div>
     <ElButton :icon="Refresh" :loading="loading" @click="load">刷新</ElButton>
   </div>
@@ -102,7 +105,9 @@ onMounted(load)
           placeholder="用户邮箱、昵称或文件名"
           @keyup.enter="search"
         /><ElSelect v-model="kind" clearable placeholder="全部类型" @change="search"
-          ><ElOption label="照片" value="IMAGE" /><ElOption label="视频" value="VIDEO"
+          ><ElOption label="录音" value="AUDIO" /><ElOption label="照片" value="IMAGE" /><ElOption
+            label="视频"
+            value="VIDEO"
         /></ElSelect>
       </div>
     </div>
@@ -122,8 +127,19 @@ onMounted(load)
       <ElTableColumn label="类型" width="100"
         ><template #default="scope"
           ><ElTag size="small" effect="plain">{{
-            scope.row.kind === 'IMAGE' ? '照片' : '视频'
+            scope.row.kind === 'IMAGE' ? '照片' : scope.row.kind === 'AUDIO' ? '录音' : '视频'
           }}</ElTag></template
+        ></ElTableColumn
+      >
+      <ElTableColumn label="转写处理" min-width="160"
+        ><template #default="scope"
+          >{{
+            scope.row.transcription
+              ? `${scope.row.transcription.status} · ${scope.row.transcription.attempts} 次`
+              : '未请求'
+          }}<br /><span class="muted">{{
+            scope.row.transcription?.errorCode || ''
+          }}</span></template
         ></ElTableColumn
       >
       <ElTableColumn label="大小" width="110"

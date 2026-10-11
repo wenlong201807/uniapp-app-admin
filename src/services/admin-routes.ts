@@ -20,6 +20,13 @@ export interface AdminRouteRecord {
 
 export const staticAdminRoutes: AdminRouteRecord[] = [
   {
+    path: '/integrity-reports',
+    name: 'integrity-reports',
+    title: '设备风险',
+    icon: 'shield',
+    permission: 'admin:security:integrity',
+  },
+  {
     path: '/overview',
     name: 'overview',
     title: '工作台',
@@ -74,6 +81,34 @@ export const staticAdminRoutes: AdminRouteRecord[] = [
     title: '媒体分享',
     icon: 'media',
     permission: 'admin:content:shares',
+  },
+  {
+    path: '/task-locations',
+    name: 'task-locations',
+    title: '位置隐私',
+    icon: 'shield',
+    permission: 'admin:privacy:locations',
+  },
+  {
+    path: '/bluetooth-bindings',
+    name: 'bluetooth-bindings',
+    title: '蓝牙关联',
+    icon: 'connection',
+    permission: 'admin:hardware:bluetooth',
+  },
+  {
+    path: '/nfc-tags',
+    name: 'nfc-tags',
+    title: 'NFC 标签',
+    icon: 'connection',
+    permission: 'admin:hardware:nfc',
+  },
+  {
+    path: '/task-invitations',
+    name: 'task-invitations',
+    title: '任务邀请',
+    icon: 'connection',
+    permission: 'admin:tasks:invitations',
   },
   {
     path: '/ai-config',

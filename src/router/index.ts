@@ -28,6 +28,12 @@ const router = createRouter({
       children: [
         { path: '', redirect: '/overview' },
         {
+          path: 'integrity-reports',
+          name: 'integrity-reports',
+          component: () => import('@/views/IntegrityReportsView.vue'),
+          meta: { title: '设备风险' },
+        },
+        {
           path: 'forbidden',
           name: 'forbidden',
           component: () => import('@/views/ForbiddenView.vue'),
@@ -80,6 +86,30 @@ const router = createRouter({
           name: 'media-shares',
           component: () => import('@/views/MediaSharesView.vue'),
           meta: { title: '媒体分享' },
+        },
+        {
+          path: 'task-locations',
+          name: 'task-locations',
+          component: () => import('@/views/TaskLocationsView.vue'),
+          meta: { title: '位置隐私' },
+        },
+        {
+          path: 'bluetooth-bindings',
+          name: 'bluetooth-bindings',
+          component: () => import('@/views/BluetoothBindingsView.vue'),
+          meta: { title: '蓝牙关联' },
+        },
+        {
+          path: 'nfc-tags',
+          name: 'nfc-tags',
+          component: () => import('@/views/NfcTagsView.vue'),
+          meta: { title: 'NFC 标签' },
+        },
+        {
+          path: 'task-invitations',
+          name: 'task-invitations',
+          component: () => import('@/views/TaskInvitationsView.vue'),
+          meta: { title: '任务邀请' },
         },
         {
           path: 'ai-config',
@@ -136,12 +166,17 @@ router.beforeEach(async (to) => {
       if (
         to.name === 'overview' ||
         to.name === 'system' ||
+        to.name === 'integrity-reports' ||
         to.name === 'device-keys' ||
         to.name === 'media' ||
         to.name === 'sessions' ||
         to.name === 'security-events' ||
         to.name === 'push-devices' ||
         to.name === 'media-shares' ||
+        to.name === 'task-locations' ||
+        to.name === 'bluetooth-bindings' ||
+        to.name === 'nfc-tags' ||
+        to.name === 'task-invitations' ||
         to.name === 'ai-config' ||
         to.name === 'ai-usage' ||
         to.name === 'ai-quotas' ||

@@ -1,6 +1,6 @@
 import { request } from './http'
 
-export type MediaKind = 'IMAGE' | 'VIDEO'
+export type MediaKind = 'IMAGE' | 'VIDEO' | 'AUDIO'
 export type MediaStatus = 'READY' | 'DELETING'
 
 export interface AdminMediaOwner {
@@ -19,6 +19,12 @@ export interface AdminMedia {
   height: number
   durationSeconds: number | null
   createdAt: string
+  transcription: {
+    status: string
+    attempts: number
+    errorCode: string | null
+    updatedAt: string
+  } | null
   owner: AdminMediaOwner
 }
 export interface AdminMediaPage {

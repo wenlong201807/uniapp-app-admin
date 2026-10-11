@@ -207,3 +207,22 @@ test('navigation shares in-flight loads and ignores responses after reset', asyn
   assert.equal(navigation.loaded, false)
   assert.equal(navigation.hasRemoteRoutes, false)
 })
+
+test('risk review requests keep their explicit action and never transmit a trusted verdict', async () => {
+  const risk = await server.ssrLoadModule('/src/services/admin-integrity.ts')
+  const calls = []
+  globalThis.fetch = async (url, options) => {
+    calls.push({ url: String(url), options })
+    return response({ verification: 'UNVERIFIED' })
+  }
+  await risk.reviewIntegrityReport('access-one', 'report-one', 'FOLLOW_UP')
+  assert.ok(calls[0].url.endsWith('/admin/integrity/reports/report-one/review'))
+  assert.equal(calls[0].options.method, 'POST')
+  assert.deepEqual(JSON.parse(calls[0].options.body), { review: 'FOLLOW_UP' })
+  await risk.deleteIntegrityReport('access-one', 'report-one')
+  assert.equal(calls[1].options.method, 'DELETE')
+  await risk.listIntegrityReports('access-one', { page: 1, q: 'example@local', review: 'PENDING' })
+  const url = new URL(calls[2].url, 'http://localhost')
+  assert.equal(url.searchParams.get('q'), 'example@local')
+  assert.equal(url.searchParams.get('review'), 'PENDING')
+})
