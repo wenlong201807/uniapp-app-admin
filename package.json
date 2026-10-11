@@ -12,6 +12,7 @@
     "lint:fix": "oxlint --fix",
     "format": "oxfmt .",
     "format:check": "oxfmt --check .",
+    "test": "node --test --test-concurrency=1 tests/*.test.mjs",
     "check": "pnpm format:check && pnpm lint && pnpm typecheck"
   },
   "dependencies": {
