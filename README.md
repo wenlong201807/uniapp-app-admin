@@ -62,3 +62,17 @@ src/
 ## 部署
 
 `pnpm build` 生成静态资源。Web 服务需支持 SPA 路由回退（如 Nginx `try_files $uri $uri/ /index.html`），并将 `/api/` 反向代理至应用服务。开发代理不会进入生产构建。
+
+NFC 任务入口的使用、原生打包前提和真机待办见 [NFC 任务入口](docs/nfc-task-entries.md)。
+
+学习日程与单联系人任务邀请的使用及真机待办见 [学习日程与邀请](docs/planner-and-invitations.md)。
+
+学习录音笔记（P2-05）的使用、可选转写与平台待办见 [录音笔记](docs/audio-notes.md)。
+
+前台专注、短震动、全屏与显示恢复（P2-06）见 [设备本地体验](docs/device-experience.md)。
+
+本机放置与环境传感器（P3-01）的使用、平台支持与待办见 [传感器检查](docs/sensors.md)。
+
+当天健康步数（P3-02）的只读流程、清除/导出与平台待办见 [健康数据](docs/health-data.md)。
+
+本机风险线索与管理员复核（P3-03）的未验证边界和平台待办见 [设备风险](docs/device-integrity.md)。

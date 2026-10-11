@@ -28,6 +28,12 @@ const router = createRouter({
       children: [
         { path: '', redirect: '/overview' },
         {
+          path: 'integrity-reports',
+          name: 'integrity-reports',
+          component: () => import('@/views/IntegrityReportsView.vue'),
+          meta: { title: '设备风险' },
+        },
+        {
           path: 'forbidden',
           name: 'forbidden',
           component: () => import('@/views/ForbiddenView.vue'),
@@ -44,6 +50,90 @@ const router = createRouter({
           name: 'system',
           component: () => import('@/views/SystemView.vue'),
           meta: { title: '服务连接' },
+        },
+        {
+          path: 'device-keys',
+          name: 'device-keys',
+          component: () => import('@/views/DeviceKeysView.vue'),
+          meta: { title: '设备密钥' },
+        },
+        {
+          path: 'media',
+          name: 'media',
+          component: () => import('@/views/MediaView.vue'),
+          meta: { title: '媒体管理' },
+        },
+        {
+          path: 'sessions',
+          name: 'sessions',
+          component: () => import('@/views/SessionsView.vue'),
+          meta: { title: '设备会话' },
+        },
+        {
+          path: 'security-events',
+          name: 'security-events',
+          component: () => import('@/views/SecurityEventsView.vue'),
+          meta: { title: '安全审计' },
+        },
+        {
+          path: 'push-devices',
+          name: 'push-devices',
+          component: () => import('@/views/PushDevicesView.vue'),
+          meta: { title: '推送设备' },
+        },
+        {
+          path: 'media-shares',
+          name: 'media-shares',
+          component: () => import('@/views/MediaSharesView.vue'),
+          meta: { title: '媒体分享' },
+        },
+        {
+          path: 'task-locations',
+          name: 'task-locations',
+          component: () => import('@/views/TaskLocationsView.vue'),
+          meta: { title: '位置隐私' },
+        },
+        {
+          path: 'bluetooth-bindings',
+          name: 'bluetooth-bindings',
+          component: () => import('@/views/BluetoothBindingsView.vue'),
+          meta: { title: '蓝牙关联' },
+        },
+        {
+          path: 'nfc-tags',
+          name: 'nfc-tags',
+          component: () => import('@/views/NfcTagsView.vue'),
+          meta: { title: 'NFC 标签' },
+        },
+        {
+          path: 'task-invitations',
+          name: 'task-invitations',
+          component: () => import('@/views/TaskInvitationsView.vue'),
+          meta: { title: '任务邀请' },
+        },
+        {
+          path: 'ai-config',
+          name: 'ai-config',
+          component: () => import('@/views/AIConfigView.vue'),
+          meta: { title: 'AI 模型' },
+        },
+        {
+          path: 'ai-usage',
+          name: 'ai-usage',
+          component: () => import('@/views/AIUsageView.vue'),
+          meta: { title: 'AI 用量' },
+        },
+        {
+          path: 'ai-quotas',
+          name: 'ai-quotas',
+          component: () => import('@/views/AIQuotasView.vue'),
+          meta: { title: 'AI 额度' },
+        },
+        {
+          path: 'ai-sessions',
+          name: 'ai-sessions',
+          component: () => import('@/views/AISessionsView.vue'),
+          meta: { title: 'AI 会话' },
         },
         {
           path: ':pathMatch(.*)*',
@@ -73,7 +163,25 @@ router.beforeEach(async (to) => {
         navigation.reset()
         return '/login'
       }
-      if (to.name === 'overview' || to.name === 'system') {
+      if (
+        to.name === 'overview' ||
+        to.name === 'system' ||
+        to.name === 'integrity-reports' ||
+        to.name === 'device-keys' ||
+        to.name === 'media' ||
+        to.name === 'sessions' ||
+        to.name === 'security-events' ||
+        to.name === 'push-devices' ||
+        to.name === 'media-shares' ||
+        to.name === 'task-locations' ||
+        to.name === 'bluetooth-bindings' ||
+        to.name === 'nfc-tags' ||
+        to.name === 'task-invitations' ||
+        to.name === 'ai-config' ||
+        to.name === 'ai-usage' ||
+        to.name === 'ai-quotas' ||
+        to.name === 'ai-sessions'
+      ) {
         if (!navigation.visibleRoutes.some((item) => item.path === to.path)) return '/forbidden'
       }
       return true

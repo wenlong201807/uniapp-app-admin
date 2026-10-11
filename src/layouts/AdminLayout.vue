@@ -2,7 +2,18 @@
 import { computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElButton, ElIcon, ElTag, ElMessage } from 'element-plus'
-import { Connection, Fold, Grid, Expand, ArrowRight, Lock } from '@element-plus/icons-vue'
+import {
+  Connection,
+  Fold,
+  Grid,
+  Expand,
+  ArrowRight,
+  Lock,
+  Picture,
+  Document,
+  Bell,
+  ChatDotRound,
+} from '@element-plus/icons-vue'
 import { appConfig } from '@/config/app'
 import { useAppStore } from '@/stores/app'
 import { useAdminAuthStore } from '@/stores/admin-auth'
@@ -16,7 +27,15 @@ const router = useRouter()
 const status = computed(() =>
   app.checking ? '检查中' : app.health ? '服务正常' : app.healthError ? '连接异常' : '待检测',
 )
-const iconMap = { dashboard: Grid, connection: Connection, shield: Lock }
+const iconMap = {
+  dashboard: Grid,
+  connection: Connection,
+  shield: Lock,
+  media: Picture,
+  audit: Document,
+  bell: Bell,
+  ai: ChatDotRound,
+}
 const navigation = computed(() =>
   adminRoutes.visibleRoutes.map((item) => ({ ...item, icon: iconMap[item.icon] })),
 )
