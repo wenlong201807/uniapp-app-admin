@@ -11,10 +11,36 @@ import {
 } from '@/services/admin-auth'
 import { ApiError } from '@/services/http'
 
+// The refresh token lives in sessionStorage: it survives page reloads within the
+// tab (no forced re-login on F5) and is burned automatically when the tab closes.
+// Note: because the server rotates refresh tokens single-use, a second tab holding
+// a stale token only logs itself out — the tab with the newest token keeps working.
+const REFRESH_STORAGE_KEY = 'moment-admin-refresh-token'
+
+function readStoredRefreshToken(): string | null {
+  try {
+    return typeof sessionStorage === 'undefined'
+      ? null
+      : sessionStorage.getItem(REFRESH_STORAGE_KEY)
+  } catch {
+    return null
+  }
+}
+
+function writeStoredRefreshToken(token: string | null): void {
+  try {
+    if (typeof sessionStorage === 'undefined') return
+    if (token === null) sessionStorage.removeItem(REFRESH_STORAGE_KEY)
+    else sessionStorage.setItem(REFRESH_STORAGE_KEY, token)
+  } catch {
+    /* storage unavailable (private mode) — session just won't survive a reload */
+  }
+}
+
 export const useAdminAuthStore = defineStore('admin-auth', () => {
   const admin = ref<AdminAccount | null>(null)
   const accessToken = ref<string | null>(null)
-  const refreshToken = ref<string | null>(null)
+  const refreshToken = ref<string | null>(readStoredRefreshToken())
   const expiresAt = ref(0)
   const refreshing = ref<Promise<void> | null>(null)
   const isAuthenticated = computed(() => Boolean(admin.value && accessToken.value))
@@ -29,6 +55,7 @@ export const useAdminAuthStore = defineStore('admin-auth', () => {
     expiresAt.value = 0
     refreshing.value = null
     checking = null
+    writeStoredRefreshToken(null)
   }
 
   function accept(result: {
@@ -41,6 +68,7 @@ export const useAdminAuthStore = defineStore('admin-auth', () => {
     accessToken.value = result.accessToken
     refreshToken.value = result.refreshToken
     expiresAt.value = Date.now() + result.expiresIn * 1000
+    writeStoredRefreshToken(result.refreshToken)
   }
 
   async function login(input: AdminLoginInput) {
@@ -90,6 +118,10 @@ export const useAdminAuthStore = defineStore('admin-auth', () => {
   }
 
   async function ensureSession() {
+    // After a page reload only the tab-scoped refresh token survives: exchange it
+    // for a fresh access token before anything else. A rejected token clears the
+    // session; transient network failures simply fall back to the login page.
+    if (!accessToken.value && refreshToken.value) await refresh().catch(() => undefined)
     if (!accessToken.value) return false
     if (checking) return checking
     const currentRevision = revision

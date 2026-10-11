@@ -11,6 +11,14 @@ let ApiError
 let auth
 let navigation
 const originalFetch = globalThis.fetch
+const originalSessionStorage = globalThis.sessionStorage
+// Node has no sessionStorage global; emulate the tab-scoped Web storage.
+const storageMap = new Map()
+globalThis.sessionStorage = {
+  getItem: (key) => storageMap.get(key) ?? null,
+  setItem: (key, value) => storageMap.set(key, String(value)),
+  removeItem: (key) => storageMap.delete(key),
+}
 const admin = { id: 'admin-one', email: 'admin@example.com', displayName: '管理员', createdAt: '' }
 const session = {
   admin,
@@ -45,12 +53,14 @@ before(async () => {
   ;({ ApiError } = await server.ssrLoadModule('/src/services/http.ts'))
 })
 beforeEach(() => {
+  storageMap.clear()
   const pinia = createPinia()
   auth = authModule.useAdminAuthStore(pinia)
   navigation = routesModule.useAdminRoutesStore(pinia)
 })
 after(async () => {
   globalThis.fetch = originalFetch
+  globalThis.sessionStorage = originalSessionStorage
   await server?.close()
 })
 
@@ -225,4 +235,35 @@ test('risk review requests keep their explicit action and never transmit a trust
   const url = new URL(calls[2].url, 'http://localhost')
   assert.equal(url.searchParams.get('q'), 'example@local')
   assert.equal(url.searchParams.get('review'), 'PENDING')
+})
+
+test('a reloaded store restores the session from the tab-scoped refresh token', async () => {
+  await login()
+  assert.equal(storageMap.get('moment-admin-refresh-token'), session.refreshToken)
+  const reloaded = authModule.useAdminAuthStore(createPinia())
+  assert.equal(reloaded.isAuthenticated, false)
+  let requests = 0
+  globalThis.fetch = async () => {
+    requests += 1
+    return requests === 1 ? response({ ...session, accessToken: 'access-two' }) : response(admin)
+  }
+  assert.equal(await reloaded.ensureSession(), true)
+  assert.equal(requests, 2)
+  assert.equal(reloaded.accessToken, 'access-two')
+  assert.equal(storageMap.get('moment-admin-refresh-token'), session.refreshToken)
+})
+
+test('an invalid stored refresh token clears storage and falls back to login', async () => {
+  storageMap.set('moment-admin-refresh-token', 'stale-token')
+  const reloaded = authModule.useAdminAuthStore(createPinia())
+  globalThis.fetch = async () => response(null, 401)
+  assert.equal(await reloaded.ensureSession(), false)
+  assert.equal(storageMap.get('moment-admin-refresh-token'), undefined)
+})
+
+test('clear removes the tab-scoped refresh token', async () => {
+  await login()
+  assert.notEqual(storageMap.get('moment-admin-refresh-token'), undefined)
+  auth.clear()
+  assert.equal(storageMap.get('moment-admin-refresh-token'), undefined)
 })
