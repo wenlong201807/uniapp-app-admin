@@ -31,7 +31,7 @@ const router = createRouter({
           path: 'integrity-reports',
           name: 'integrity-reports',
           component: () => import('@/views/IntegrityReportsView.vue'),
-          meta: { title: '设备风险' },
+          meta: { title: '设备风险', requiresPermission: true },
         },
         {
           path: 'forbidden',
@@ -43,97 +43,97 @@ const router = createRouter({
           path: 'overview',
           name: 'overview',
           component: () => import('@/views/OverviewView.vue'),
-          meta: { title: '工作台' },
+          meta: { title: '工作台', requiresPermission: true },
         },
         {
           path: 'system',
           name: 'system',
           component: () => import('@/views/SystemView.vue'),
-          meta: { title: '服务连接' },
+          meta: { title: '服务连接', requiresPermission: true },
         },
         {
           path: 'device-keys',
           name: 'device-keys',
           component: () => import('@/views/DeviceKeysView.vue'),
-          meta: { title: '设备密钥' },
+          meta: { title: '设备密钥', requiresPermission: true },
         },
         {
           path: 'media',
           name: 'media',
           component: () => import('@/views/MediaView.vue'),
-          meta: { title: '媒体管理' },
+          meta: { title: '媒体管理', requiresPermission: true },
         },
         {
           path: 'sessions',
           name: 'sessions',
           component: () => import('@/views/SessionsView.vue'),
-          meta: { title: '设备会话' },
+          meta: { title: '设备会话', requiresPermission: true },
         },
         {
           path: 'security-events',
           name: 'security-events',
           component: () => import('@/views/SecurityEventsView.vue'),
-          meta: { title: '安全审计' },
+          meta: { title: '安全审计', requiresPermission: true },
         },
         {
           path: 'push-devices',
           name: 'push-devices',
           component: () => import('@/views/PushDevicesView.vue'),
-          meta: { title: '推送设备' },
+          meta: { title: '推送设备', requiresPermission: true },
         },
         {
           path: 'media-shares',
           name: 'media-shares',
           component: () => import('@/views/MediaSharesView.vue'),
-          meta: { title: '媒体分享' },
+          meta: { title: '媒体分享', requiresPermission: true },
         },
         {
           path: 'task-locations',
           name: 'task-locations',
           component: () => import('@/views/TaskLocationsView.vue'),
-          meta: { title: '位置隐私' },
+          meta: { title: '位置隐私', requiresPermission: true },
         },
         {
           path: 'bluetooth-bindings',
           name: 'bluetooth-bindings',
           component: () => import('@/views/BluetoothBindingsView.vue'),
-          meta: { title: '蓝牙关联' },
+          meta: { title: '蓝牙关联', requiresPermission: true },
         },
         {
           path: 'nfc-tags',
           name: 'nfc-tags',
           component: () => import('@/views/NfcTagsView.vue'),
-          meta: { title: 'NFC 标签' },
+          meta: { title: 'NFC 标签', requiresPermission: true },
         },
         {
           path: 'task-invitations',
           name: 'task-invitations',
           component: () => import('@/views/TaskInvitationsView.vue'),
-          meta: { title: '任务邀请' },
+          meta: { title: '任务邀请', requiresPermission: true },
         },
         {
           path: 'ai-config',
           name: 'ai-config',
           component: () => import('@/views/AIConfigView.vue'),
-          meta: { title: 'AI 模型' },
+          meta: { title: 'AI 模型', requiresPermission: true },
         },
         {
           path: 'ai-usage',
           name: 'ai-usage',
           component: () => import('@/views/AIUsageView.vue'),
-          meta: { title: 'AI 用量' },
+          meta: { title: 'AI 用量', requiresPermission: true },
         },
         {
           path: 'ai-quotas',
           name: 'ai-quotas',
           component: () => import('@/views/AIQuotasView.vue'),
-          meta: { title: 'AI 额度' },
+          meta: { title: 'AI 额度', requiresPermission: true },
         },
         {
           path: 'ai-sessions',
           name: 'ai-sessions',
           component: () => import('@/views/AISessionsView.vue'),
-          meta: { title: 'AI 会话' },
+          meta: { title: 'AI 会话', requiresPermission: true },
         },
         {
           path: ':pathMatch(.*)*',
@@ -163,26 +163,13 @@ router.beforeEach(async (to) => {
         navigation.reset()
         return '/login'
       }
+      // Declarative permission gate: any route flagged requiresPermission must appear
+      // in the server-issued visibleRoutes menu, otherwise it is forbidden.
       if (
-        to.name === 'overview' ||
-        to.name === 'system' ||
-        to.name === 'integrity-reports' ||
-        to.name === 'device-keys' ||
-        to.name === 'media' ||
-        to.name === 'sessions' ||
-        to.name === 'security-events' ||
-        to.name === 'push-devices' ||
-        to.name === 'media-shares' ||
-        to.name === 'task-locations' ||
-        to.name === 'bluetooth-bindings' ||
-        to.name === 'nfc-tags' ||
-        to.name === 'task-invitations' ||
-        to.name === 'ai-config' ||
-        to.name === 'ai-usage' ||
-        to.name === 'ai-quotas' ||
-        to.name === 'ai-sessions'
+        to.meta.requiresPermission === true &&
+        !navigation.visibleRoutes.some((item) => item.path === to.path)
       ) {
-        if (!navigation.visibleRoutes.some((item) => item.path === to.path)) return '/forbidden'
+        return '/forbidden'
       }
       return true
     }

@@ -13,6 +13,7 @@
     "format": "oxfmt .",
     "format:check": "oxfmt --check .",
     "test": "node --test --test-concurrency=1 tests/*.test.mjs",
+    "audit:registry": "npm_config_registry=https://registry.npmjs.org pnpm audit --prod",
     "check": "pnpm format:check && pnpm lint && pnpm typecheck"
   },
   "dependencies": {
