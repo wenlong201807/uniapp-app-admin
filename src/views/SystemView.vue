@@ -87,9 +87,7 @@ const dependencies = computed(() => [
         ><code>GET {{ appConfig.apiBaseUrl }}/health</code></ElDescriptionsItem
       >
       <ElDescriptionsItem label="最近检测">{{ checkedTime }}</ElDescriptionsItem>
-      <ElDescriptionsItem label="认证方式"
-        >Bearer Token（管理端认证待服务端提供）</ElDescriptionsItem
-      >
+      <ElDescriptionsItem label="认证方式">Bearer Token（管理员会话）</ElDescriptionsItem>
     </ElDescriptions>
     <p class="configuration-note">
       开发环境通过 Vite 代理连接服务端。修改根目录的 .env.local 后，重启开发服务即可生效。

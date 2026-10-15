@@ -8,6 +8,7 @@ export type AdminRouteIcon =
   | 'audit'
   | 'bell'
   | 'ai'
+  | 'settings'
 
 export interface AdminRouteRecord {
   path: string
@@ -19,6 +20,48 @@ export interface AdminRouteRecord {
 }
 
 export const staticAdminRoutes: AdminRouteRecord[] = [
+  {
+    path: '/system/menus',
+    name: 'system-menus',
+    title: '菜单管理',
+    icon: 'settings',
+    permission: 'admin:system:menus',
+  },
+  {
+    path: '/system/settings',
+    name: 'system-settings',
+    title: '字典与参数',
+    icon: 'settings',
+    permission: 'admin:system:settings',
+  },
+  {
+    path: '/system/users',
+    name: 'system-users',
+    title: '用户管理',
+    icon: 'settings',
+    permission: 'admin:system:users',
+  },
+  {
+    path: '/organization/departments',
+    name: 'departments',
+    title: '部门管理',
+    icon: 'settings',
+    permission: 'admin:organization:departments',
+  },
+  {
+    path: '/organization/positions',
+    name: 'positions',
+    title: '岗位管理',
+    icon: 'settings',
+    permission: 'admin:organization:positions',
+  },
+  {
+    path: '/administrators',
+    name: 'administrators',
+    title: '管理员账号',
+    icon: 'settings',
+    permission: 'admin:rbac:admins',
+  },
   {
     path: '/integrity-reports',
     name: 'integrity-reports',
@@ -39,6 +82,13 @@ export const staticAdminRoutes: AdminRouteRecord[] = [
     title: '服务连接',
     icon: 'connection',
     permission: 'admin:system:health',
+  },
+  {
+    path: '/rbac',
+    name: 'rbac',
+    title: '角色与权限',
+    icon: 'settings',
+    permission: 'admin:rbac:roles',
   },
   {
     path: '/device-keys',

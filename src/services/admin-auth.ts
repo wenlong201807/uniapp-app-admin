@@ -1,10 +1,13 @@
 import { request } from './http'
 
 export interface AdminAccount {
+  dataScope: string
+  permissions: string[]
   id: string
   email: string
   displayName: string
   createdAt: string
+  role?: { code: string; name: string } | null
 }
 
 export interface AdminAuthResult {

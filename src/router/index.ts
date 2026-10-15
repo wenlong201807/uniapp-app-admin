@@ -28,6 +28,42 @@ const router = createRouter({
       children: [
         { path: '', redirect: '/overview' },
         {
+          path: 'system/menus',
+          name: 'system-menus',
+          component: () => import('@/views/MenusView.vue'),
+          meta: { title: '菜单管理', requiresPermission: true },
+        },
+        {
+          path: 'system/settings',
+          name: 'system-settings',
+          component: () => import('@/views/SettingsView.vue'),
+          meta: { title: '字典与参数', requiresPermission: true },
+        },
+        {
+          path: 'system/users',
+          name: 'system-users',
+          component: () => import('@/views/UsersView.vue'),
+          meta: { title: '用户管理', requiresPermission: true },
+        },
+        {
+          path: 'organization/departments',
+          name: 'departments',
+          component: () => import('@/views/DepartmentsView.vue'),
+          meta: { title: '部门管理', requiresPermission: true },
+        },
+        {
+          path: 'organization/positions',
+          name: 'positions',
+          component: () => import('@/views/PositionsView.vue'),
+          meta: { title: '岗位管理', requiresPermission: true },
+        },
+        {
+          path: 'administrators',
+          name: 'administrators',
+          component: () => import('@/views/AdministratorsView.vue'),
+          meta: { title: '管理员账号', requiresPermission: true },
+        },
+        {
           path: 'integrity-reports',
           name: 'integrity-reports',
           component: () => import('@/views/IntegrityReportsView.vue'),
@@ -50,6 +86,12 @@ const router = createRouter({
           name: 'system',
           component: () => import('@/views/SystemView.vue'),
           meta: { title: '服务连接', requiresPermission: true },
+        },
+        {
+          path: 'rbac',
+          name: 'rbac',
+          component: () => import('@/views/RbacView.vue'),
+          meta: { title: '角色与权限', requiresPermission: true },
         },
         {
           path: 'device-keys',

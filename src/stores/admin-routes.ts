@@ -9,7 +9,10 @@ import {
 import { ApiError } from '@/services/http'
 
 export const useAdminRoutesStore = defineStore('admin-routes', () => {
-  const routes = ref<AdminRouteRecord[]>(staticAdminRoutes)
+  const basicRoutes = staticAdminRoutes.filter((route) =>
+    ['/overview', '/system'].includes(route.path),
+  )
+  const routes = ref<AdminRouteRecord[]>([])
   const loading = ref(false)
   const error = ref('')
   const loaded = ref(false)
@@ -35,7 +38,7 @@ export const useAdminRoutesStore = defineStore('admin-routes', () => {
       } catch (cause) {
         if (revision !== currentRevision) return
         if (cause instanceof ApiError && (cause.status === 404 || cause.status === 501)) {
-          routes.value = staticAdminRoutes
+          routes.value = basicRoutes
           error.value = '服务端尚未支持管理导航，当前仅提供基础页面'
           loaded.value = true
           return
@@ -63,7 +66,7 @@ export const useAdminRoutesStore = defineStore('admin-routes', () => {
   function reset() {
     revision += 1
     pending = null
-    routes.value = staticAdminRoutes
+    routes.value = []
     loading.value = false
     error.value = ''
     loaded.value = false

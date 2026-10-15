@@ -174,7 +174,10 @@ test('late identity check does not overwrite a new login', async () => {
 test('missing navigation API permits only the existing basic pages', async () => {
   globalThis.fetch = async () => response(null, 404)
   await navigation.load('access')
-  assert.deepEqual(navigation.routes, catalog.staticAdminRoutes)
+  assert.deepEqual(
+    navigation.routes,
+    catalog.staticAdminRoutes.filter((route) => ['/overview', '/system'].includes(route.path)),
+  )
   assert.equal(navigation.hasRemoteRoutes, false)
   assert.match(navigation.error, /尚未支持/)
 })
@@ -213,7 +216,7 @@ test('navigation shares in-flight loads and ignores responses after reset', asyn
   navigation.reset()
   pending.resolve(response([catalog.staticAdminRoutes[1]]))
   await Promise.all([first, second])
-  assert.deepEqual(navigation.routes, catalog.staticAdminRoutes)
+  assert.deepEqual(navigation.routes, [])
   assert.equal(navigation.loaded, false)
   assert.equal(navigation.hasRemoteRoutes, false)
 })
@@ -266,4 +269,58 @@ test('clear removes the tab-scoped refresh token', async () => {
   assert.notEqual(storageMap.get('moment-admin-refresh-token'), undefined)
   auth.clear()
   assert.equal(storageMap.get('moment-admin-refresh-token'), undefined)
+})
+
+test('department options exclude the entire edited subtree and disabled nodes; search preserves ancestors', async () => {
+  const organization = await server.ssrLoadModule('/src/services/admin-organization.ts')
+  const rows = [
+    { id: 'root', parentId: null, name: '总部', enabled: true },
+    { id: 'child', parentId: 'root', name: '研发', enabled: true },
+    { id: 'leaf', parentId: 'child', name: '客户端', enabled: true },
+    { id: 'other', parentId: null, name: '运营', enabled: true },
+    { id: 'disabled', parentId: null, name: '历史', enabled: false },
+  ]
+  assert.deepEqual(
+    organization.departmentOptions(rows, 'child').map((row) => row.id),
+    ['root', 'other'],
+  )
+  const tree = organization.departmentTree(rows, '客户端')
+  assert.equal(tree.length, 1)
+  assert.equal(tree[0].children[0].children[0].id, 'leaf')
+  assert.deepEqual(
+    organization.departmentTree(rows, '', 'false').map((row) => row.id),
+    ['disabled'],
+  )
+})
+
+test('organization and system writes transmit revisions and explicit nullable assignments', async () => {
+  const organization = await server.ssrLoadModule('/src/services/admin-organization.ts')
+  const system = await server.ssrLoadModule('/src/services/admin-system.ts')
+  const rbac = await server.ssrLoadModule('/src/services/admin-rbac.ts')
+  const calls = []
+  globalThis.fetch = async (url, options) => {
+    calls.push({ url: String(url), options })
+    return response({})
+  }
+  await organization.deleteDepartment('access', 'department', 3)
+  await rbac.updateAdminMember('access', 'admin', {
+    departmentId: null,
+    positionIds: [],
+    roleId: null,
+  })
+  await system.updateSystemMenu('access', {
+    path: '/media',
+    title: '媒体',
+    orderNum: 1,
+    enabled: false,
+    expectedRevision: 2,
+  })
+  assert.equal(calls[0].options.method, 'DELETE')
+  assert.deepEqual(JSON.parse(calls[0].options.body), { expectedRevision: 3 })
+  assert.deepEqual(JSON.parse(calls[1].options.body), {
+    departmentId: null,
+    positionIds: [],
+    roleId: null,
+  })
+  assert.equal(JSON.parse(calls[2].options.body).expectedRevision, 2)
 })
