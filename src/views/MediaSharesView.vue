@@ -1,7 +1,16 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
-import { ElButton, ElInput, ElMessage, ElTable, ElTableColumn, ElTag } from 'element-plus'
+import {
+  ElButton,
+  ElInput,
+  ElMessage,
+  ElMessageBox,
+  ElTable,
+  ElTableColumn,
+  ElTag,
+} from 'element-plus'
 import { Delete, Refresh } from '@element-plus/icons-vue'
+import { usePagedList } from '@/composables/usePagedList'
 import {
   getAdminMediaShares,
   revokeAdminMediaShare,
@@ -9,53 +18,37 @@ import {
 } from '@/services/admin-media-shares'
 import { useAdminAuthStore } from '@/stores/admin-auth'
 const auth = useAdminAuthStore()
-const loading = ref(false)
 const query = ref('')
-const page = ref(1)
-const pageSize = 20
-const total = ref(0)
-const rows = ref<AdminMediaShare[]>([])
-function search() {
-  page.value = 1
-  void load()
-}
-async function load() {
-  if (!auth.accessToken) return
-  loading.value = true
-  try {
-    const result = await getAdminMediaShares(auth.accessToken, {
-      page: page.value,
-      pageSize,
-      q: query.value,
-    })
-    rows.value = result.items
-    total.value = result.total
-  } catch (error) {
-    ElMessage.error(error instanceof Error ? error.message : '分享记录加载失败')
-  } finally {
-    loading.value = false
-  }
-}
+const { rows, total, loading, canPrev, canNext, load, search, prev, next } = usePagedList(
+  async (page: number, pageSize: number) => {
+    const token = auth.accessToken
+    if (!token) throw new Error('未登录')
+    return getAdminMediaShares(token, { page, pageSize, q: query.value })
+  },
+  {
+    enabled: () => Boolean(auth.accessToken),
+    onError: (error) => {
+      ElMessage.error(error instanceof Error ? error.message : '分享记录加载失败')
+    },
+  },
+)
 async function revoke(row: AdminMediaShare) {
-  if (!auth.accessToken || !window.confirm(`撤销分享“${row.originalName}”？`)) return
+  if (!auth.accessToken) return
+  try {
+    await ElMessageBox.confirm(`撤销分享“${row.originalName}”？`, '撤销分享', {
+      type: 'warning',
+      confirmButtonText: '撤销',
+      cancelButtonText: '取消',
+    })
+  } catch {
+    return
+  }
   try {
     await revokeAdminMediaShare(auth.accessToken, row.id)
     ElMessage.success('分享已撤销')
     await load()
   } catch (error) {
     ElMessage.error(error instanceof Error ? error.message : '分享撤销失败')
-  }
-}
-function previousPage() {
-  if (page.value > 1) {
-    page.value -= 1
-    void load()
-  }
-}
-function nextPage() {
-  if (page.value * pageSize < total.value) {
-    page.value += 1
-    void load()
   }
 }
 onMounted(load)
@@ -114,8 +107,8 @@ onMounted(load)
     >
     <div class="table-footer">
       <span>共 {{ total }} 条</span
-      ><ElButton text :disabled="page <= 1" @click="previousPage">上一页</ElButton
-      ><ElButton text :disabled="page * pageSize >= total" @click="nextPage">下一页</ElButton>
+      ><ElButton text :disabled="!canPrev" @click="prev">上一页</ElButton
+      ><ElButton text :disabled="!canNext" @click="next">下一页</ElButton>
     </div>
   </section>
 </template>

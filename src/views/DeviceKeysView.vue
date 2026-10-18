@@ -1,7 +1,16 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
-import { ElButton, ElInput, ElMessage, ElTable, ElTableColumn, ElTag } from 'element-plus'
+import {
+  ElButton,
+  ElInput,
+  ElMessage,
+  ElMessageBox,
+  ElTable,
+  ElTableColumn,
+  ElTag,
+} from 'element-plus'
 import { Refresh, Delete } from '@element-plus/icons-vue'
+import { usePagedList } from '@/composables/usePagedList'
 import {
   getAdminDeviceKeys,
   revokeAdminDeviceKey,
@@ -10,40 +19,34 @@ import {
 import { useAdminAuthStore } from '@/stores/admin-auth'
 
 const auth = useAdminAuthStore()
-const loading = ref(false)
 const query = ref('')
-const page = ref(1)
-const pageSize = ref(20)
-const total = ref(0)
-const rows = ref<AdminDeviceKey[]>([])
+const { rows, total, loading, canPrev, canNext, load, search, prev, next } = usePagedList(
+  async (page: number, pageSize: number) => {
+    const token = auth.accessToken
+    if (!token) throw new Error('未登录')
+    return getAdminDeviceKeys(token, { page, pageSize, q: query.value })
+  },
+  {
+    enabled: () => Boolean(auth.accessToken),
+    onError: (error) => {
+      ElMessage.error(error instanceof Error ? error.message : '设备列表加载失败')
+    },
+  },
+)
 
 const platform = (audience: string) =>
   audience.includes('sslip.io') || audience.includes('localhost') ? '开发环境' : '生产环境'
-async function load() {
-  if (!auth.accessToken) return
-  loading.value = true
-  try {
-    const result = await getAdminDeviceKeys(auth.accessToken, {
-      page: page.value,
-      pageSize: pageSize.value,
-      q: query.value,
-    })
-    rows.value = result.items
-    total.value = result.total
-  } catch (error) {
-    ElMessage.error(error instanceof Error ? error.message : '设备列表加载失败')
-  } finally {
-    loading.value = false
-  }
-}
 async function revoke(row: AdminDeviceKey) {
-  if (
-    !auth.accessToken ||
-    !window.confirm(
+  if (!auth.accessToken) return
+  try {
+    await ElMessageBox.confirm(
       `撤销 ${row.user.email} 的设备密钥“${row.name}”？该用户的现有登录会话也会失效。`,
+      '撤销设备密钥',
+      { type: 'warning', confirmButtonText: '撤销', cancelButtonText: '取消' },
     )
-  )
+  } catch {
     return
+  }
   try {
     await revokeAdminDeviceKey(auth.accessToken, row.id)
     ElMessage.success('设备密钥已撤销')
@@ -51,15 +54,6 @@ async function revoke(row: AdminDeviceKey) {
   } catch (error) {
     ElMessage.error(error instanceof Error ? error.message : '设备密钥撤销失败')
   }
-}
-async function search() {
-  page.value = 1
-  await load()
-}
-
-async function turnPage(direction: 1 | -1) {
-  page.value += direction
-  await load()
 }
 
 onMounted(load)
@@ -116,8 +110,8 @@ onMounted(load)
     </ElTable>
     <div class="table-footer">
       <span>共 {{ total }} 个设备密钥</span
-      ><ElButton text :disabled="page <= 1" @click="turnPage(-1)">上一页</ElButton
-      ><ElButton text :disabled="page * pageSize >= total" @click="turnPage(1)">下一页</ElButton>
+      ><ElButton text :disabled="!canPrev" @click="prev">上一页</ElButton
+      ><ElButton text :disabled="!canNext" @click="next">下一页</ElButton>
     </div>
   </section>
 </template>

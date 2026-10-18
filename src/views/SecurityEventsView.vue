@@ -68,9 +68,21 @@ async function exportPage() {
     if (action.value.trim()) query.set('action', action.value.trim())
     if (userId.value.trim()) query.set('userId', userId.value.trim())
     if (resultFilter.value) query.set('result', resultFilter.value)
-    const response = await fetch(`${appConfig.apiBaseUrl}/admin/security-events/export?${query}`, {
-      headers: { Authorization: `Bearer ${token}` },
-    })
+    // The export streams a CSV; bound it with the same timeout discipline as
+    // the request() wrapper so a hung server cannot spin the button forever.
+    const controller = new AbortController()
+    const timer = setTimeout(() => controller.abort(), 30000)
+    let response: Response
+    try {
+      response = await fetch(`${appConfig.apiBaseUrl}/admin/security-events/export?${query}`, {
+        headers: { Authorization: `Bearer ${token}` },
+        signal: controller.signal,
+      })
+    } catch {
+      throw new Error('导出超时或网络失败，请重试')
+    } finally {
+      clearTimeout(timer)
+    }
     if (!response.ok) throw new Error(`导出失败（${response.status}）`)
     const blob = await response.blob()
     if (token !== auth.accessToken) return

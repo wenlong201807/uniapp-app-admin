@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
-import { ElButton, ElInput, ElMessage, ElTable, ElTableColumn } from 'element-plus'
+import { ElButton, ElInput, ElMessage, ElMessageBox, ElTable, ElTableColumn } from 'element-plus'
 import { Refresh, Delete } from '@element-plus/icons-vue'
 import {
   getAdminTaskLocations,
@@ -43,12 +43,16 @@ function movePage(delta: number) {
   void load()
 }
 async function remove(row: AdminTaskLocation) {
-  if (
-    loading.value ||
-    !auth.accessToken ||
-    !window.confirm('删除用户 ' + row.owner.email + ' 的地点“' + row.label + '”？任务内容会保留。')
-  )
+  if (loading.value || !auth.accessToken) return
+  try {
+    await ElMessageBox.confirm(
+      '删除用户 ' + row.owner.email + ' 的地点“' + row.label + '”？任务内容会保留。',
+      '删除地点',
+      { type: 'warning', confirmButtonText: '删除', cancelButtonText: '取消' },
+    )
+  } catch {
     return
+  }
   loading.value = true
   try {
     await deleteAdminTaskLocation(auth.accessToken, row.id)

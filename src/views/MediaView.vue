@@ -4,6 +4,7 @@ import {
   ElButton,
   ElInput,
   ElMessage,
+  ElMessageBox,
   ElSelect,
   ElOption,
   ElTable,
@@ -11,6 +12,7 @@ import {
   ElTag,
 } from 'element-plus'
 import { Delete, Refresh } from '@element-plus/icons-vue'
+import { usePagedList } from '@/composables/usePagedList'
 import {
   getAdminMedia,
   removeAdminMedia,
@@ -20,13 +22,26 @@ import {
 import { useAdminAuthStore } from '@/stores/admin-auth'
 
 const auth = useAdminAuthStore()
-const loading = ref(false)
 const query = ref('')
 const kind = ref<MediaKind | ''>('')
-const page = ref(1)
-const pageSize = ref(20)
-const total = ref(0)
-const rows = ref<AdminMedia[]>([])
+const { rows, total, loading, canPrev, canNext, load, search, prev, next } = usePagedList(
+  async (page: number, pageSize: number) => {
+    const token = auth.accessToken
+    if (!token) throw new Error('未登录')
+    return getAdminMedia(token, {
+      page,
+      pageSize,
+      q: query.value,
+      kind: kind.value || undefined,
+    })
+  },
+  {
+    enabled: () => Boolean(auth.accessToken),
+    onError: (error) => {
+      ElMessage.error(error instanceof Error ? error.message : '媒体列表加载失败')
+    },
+  },
+)
 function formatSize(bytes: number) {
   return bytes < 1024 * 1024
     ? `${Math.ceil(bytes / 1024)} KiB`
@@ -38,38 +53,17 @@ function formatMedia(row: AdminMedia) {
     ? `${row.width} × ${row.height} · ${Math.ceil(row.durationSeconds)} 秒`
     : `${row.width} × ${row.height}`
 }
-async function load() {
-  if (!auth.accessToken) return
-  loading.value = true
-  try {
-    const result = await getAdminMedia(auth.accessToken, {
-      page: page.value,
-      pageSize: pageSize.value,
-      q: query.value,
-      kind: kind.value || undefined,
-    })
-    rows.value = result.items
-    total.value = result.total
-  } catch (error) {
-    ElMessage.error(error instanceof Error ? error.message : '媒体列表加载失败')
-  } finally {
-    loading.value = false
-  }
-}
-async function search() {
-  page.value = 1
-  await load()
-}
-async function turnPage(direction: 1 | -1) {
-  page.value += direction
-  await load()
-}
 async function remove(row: AdminMedia) {
-  if (
-    !auth.accessToken ||
-    !window.confirm(`删除用户“${row.owner.email}”的媒体“${row.originalName}”？此操作不可恢复。`)
-  )
+  if (!auth.accessToken) return
+  try {
+    await ElMessageBox.confirm(
+      `删除用户“${row.owner.email}”的媒体“${row.originalName}”？此操作不可恢复。`,
+      '删除媒体',
+      { type: 'warning', confirmButtonText: '删除', cancelButtonText: '取消' },
+    )
+  } catch {
     return
+  }
   try {
     await removeAdminMedia(auth.accessToken, row.id)
     ElMessage.success('媒体已删除')
@@ -160,8 +154,8 @@ onMounted(load)
     </ElTable>
     <div class="table-footer">
       <span>共 {{ total }} 条媒体</span
-      ><ElButton text :disabled="page <= 1" @click="turnPage(-1)">上一页</ElButton
-      ><ElButton text :disabled="page * pageSize >= total" @click="turnPage(1)">下一页</ElButton>
+      ><ElButton text :disabled="!canPrev" @click="prev">上一页</ElButton
+      ><ElButton text :disabled="!canNext" @click="next">下一页</ElButton>
     </div>
     <p class="muted privacy-note">
       管理端只显示元数据，不提供默认公开播放链接；删除会同步释放用户存储配额。

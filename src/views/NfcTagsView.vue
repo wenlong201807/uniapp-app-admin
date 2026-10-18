@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
-import { ElButton, ElInput, ElMessage, ElTable, ElTableColumn } from 'element-plus'
+import { ElButton, ElInput, ElMessage, ElMessageBox, ElTable, ElTableColumn } from 'element-plus'
 import { getAdminNfcTags, revokeAdminNfcTag, type AdminNfcTag } from '@/services/admin-nfc-tags'
 import { useAdminAuthStore } from '@/stores/admin-auth'
 const auth = useAdminAuthStore()
@@ -37,12 +37,16 @@ function move(delta: number) {
   }
 }
 async function revoke(row: AdminNfcTag) {
-  if (
-    loading.value ||
-    !auth.accessToken ||
-    !window.confirm(`撤销 ${row.owner.email} 的 NFC 入口“${row.label}”？标签文本将失效，任务保留。`)
-  )
+  if (loading.value || !auth.accessToken) return
+  try {
+    await ElMessageBox.confirm(
+      `撤销 ${row.owner.email} 的 NFC 入口“${row.label}”？标签文本将失效，任务保留。`,
+      '撤销 NFC 入口',
+      { type: 'warning', confirmButtonText: '撤销', cancelButtonText: '取消' },
+    )
+  } catch {
     return
+  }
   loading.value = true
   try {
     await revokeAdminNfcTag(auth.accessToken, row.id)

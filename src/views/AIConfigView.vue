@@ -18,6 +18,7 @@ import {
   ElTag,
 } from 'element-plus'
 import { Delete, Plus, Refresh } from '@element-plus/icons-vue'
+import { usePagedList } from '@/composables/usePagedList'
 import {
   createAdminAiModel,
   createAdminAiProvider,
@@ -33,16 +34,10 @@ import {
 import { useAdminAuthStore } from '@/stores/admin-auth'
 
 const auth = useAdminAuthStore()
-const loading = ref(false)
-const rows = ref<AdminAiProvider[]>([])
-const total = ref(0)
-const page = ref(1)
-const pageSize = ref(20)
 const envFallback = ref<AdminAiEnvFallback>({
   GPT: { configured: false, suppressed: false },
   GLM: { configured: false, suppressed: false },
 })
-let revision = 0
 
 function toastError(error: unknown, fallback: string) {
   ElMessage.error(error instanceof Error ? error.message : fallback)
@@ -54,35 +49,21 @@ function envFallbackText(kind: 'GPT' | 'GLM') {
   return status.suppressed ? '已配置，但被数据库供应商行抑制' : '生效中'
 }
 
-async function load() {
-  if (!auth.accessToken) return
-  loading.value = true
-  const current = ++revision
-  const token = auth.accessToken
-  try {
-    const result = await getAdminAiProviders(token, {
-      page: page.value,
-      pageSize: pageSize.value,
-    })
-    if (current !== revision || token !== auth.accessToken) return
-    rows.value = result.items
-    total.value = result.total
-    envFallback.value = result.envFallback
-  } catch (error) {
-    toastError(error, '供应商列表加载失败')
-  } finally {
-    if (current === revision) loading.value = false
-  }
-}
+const { rows, total, loading, canPrev, canNext, load, prev, next } = usePagedList(
+  async (page: number, pageSize: number) => {
+    const token = auth.accessToken
+    if (!token) throw new Error('未登录')
+    return getAdminAiProviders(token, { page, pageSize })
+  },
+  {
+    enabled: () => Boolean(auth.accessToken),
+    onError: (error) => toastError(error, '供应商列表加载失败'),
+  },
+)
 
-async function previousPage() {
-  page.value -= 1
-  await load()
-}
-
-async function nextPage() {
-  page.value += 1
-  await load()
+async function refreshProviders() {
+  const result = await load()
+  if (result) envFallback.value = result.envFallback
 }
 
 const providerDialog = ref(false)
@@ -157,7 +138,7 @@ async function submitProvider() {
       ElMessage.success('供应商已创建')
     }
     providerDialog.value = false
-    await load()
+    await refreshProviders()
   } catch (error) {
     toastError(error, '供应商保存失败')
   } finally {
@@ -178,7 +159,7 @@ async function removeProvider(row: AdminAiProvider) {
   try {
     await removeAdminAiProvider(auth.accessToken, row.id)
     ElMessage.success('供应商已删除')
-    await load()
+    await refreshProviders()
   } catch (error) {
     toastError(error, '供应商删除失败')
   }
@@ -189,7 +170,7 @@ async function toggleProvider(row: AdminAiProvider) {
   try {
     await updateAdminAiProvider(auth.accessToken, row.id, { enabled: row.enabled })
     ElMessage.success(row.enabled ? '供应商已启用' : '供应商已停用')
-    await load()
+    await refreshProviders()
   } catch (error) {
     row.enabled = !row.enabled
     toastError(error, '供应商状态更新失败')
@@ -231,7 +212,7 @@ async function submitModel() {
     })
     ElMessage.success('模型已创建')
     modelDialog.value = false
-    await load()
+    await refreshProviders()
   } catch (error) {
     toastError(error, '模型创建失败')
   } finally {
@@ -246,7 +227,7 @@ async function toggleModelReasoning(row: AdminAiModel) {
       supportsReasoning: row.supportsReasoning,
     })
     ElMessage.success('模型配置已更新')
-    await load()
+    await refreshProviders()
   } catch (error) {
     row.supportsReasoning = !row.supportsReasoning
     toastError(error, '模型配置更新失败')
@@ -258,7 +239,7 @@ async function toggleModelEnabled(row: AdminAiModel) {
   try {
     await updateAdminAiModel(auth.accessToken, row.id, { enabled: row.enabled })
     ElMessage.success(row.enabled ? '模型已启用' : '模型已停用')
-    await load()
+    await refreshProviders()
   } catch (error) {
     row.enabled = !row.enabled
     toastError(error, '模型状态更新失败')
@@ -270,24 +251,33 @@ async function setDefaultModel(row: AdminAiModel) {
   try {
     await updateAdminAiModel(auth.accessToken, row.id, { isDefault: true })
     ElMessage.success('默认模型已切换')
-    await load()
+    await refreshProviders()
   } catch (error) {
     toastError(error, '默认模型设置失败')
   }
 }
 
 async function removeModel(row: AdminAiModel) {
-  if (!auth.accessToken || !window.confirm(`删除模型“${row.displayName}”？`)) return
+  if (!auth.accessToken) return
+  try {
+    await ElMessageBox.confirm(`删除模型“${row.displayName}”？`, '删除模型', {
+      type: 'warning',
+      confirmButtonText: '删除',
+      cancelButtonText: '取消',
+    })
+  } catch {
+    return
+  }
   try {
     await removeAdminAiModel(auth.accessToken, row.id)
     ElMessage.success('模型已删除')
-    await load()
+    await refreshProviders()
   } catch (error) {
     toastError(error, '模型删除失败')
   }
 }
 
-onMounted(load)
+onMounted(refreshProviders)
 </script>
 
 <template>
@@ -297,7 +287,7 @@ onMounted(load)
       <h1>AI 模型</h1>
       <p class="page-description">维护 AI 供应商接入地址、密钥与模型开放状态。</p>
     </div>
-    <ElButton :icon="Refresh" :loading="loading" @click="load">刷新</ElButton>
+    <ElButton :icon="Refresh" :loading="loading" @click="refreshProviders">刷新</ElButton>
   </div>
   <ElAlert
     class="config-alert"
@@ -415,8 +405,8 @@ onMounted(load)
     </ElTable>
     <div class="table-footer">
       <span>共 {{ total }} 个供应商</span
-      ><ElButton text :disabled="page <= 1" @click="previousPage">上一页</ElButton
-      ><ElButton text :disabled="page * pageSize >= total" @click="nextPage">下一页</ElButton>
+      ><ElButton text :disabled="!canPrev" @click="prev">上一页</ElButton
+      ><ElButton text :disabled="!canNext" @click="next">下一页</ElButton>
     </div>
   </section>
 

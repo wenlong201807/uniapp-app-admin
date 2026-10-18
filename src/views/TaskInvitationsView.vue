@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
-import { ElButton, ElInput, ElMessage, ElTable, ElTableColumn } from 'element-plus'
+import { ElButton, ElInput, ElMessage, ElMessageBox, ElTable, ElTableColumn } from 'element-plus'
 import {
   getAdminTaskInvitations,
   revokeAdminTaskInvitation,
@@ -41,12 +41,16 @@ function move(delta: number) {
   }
 }
 async function revoke(row: AdminTaskInvitation) {
-  if (
-    loading.value ||
-    !auth.accessToken ||
-    !window.confirm(`撤销 ${row.owner.email} 创建的任务邀请？已接受的任务副本不受影响。`)
-  )
+  if (loading.value || !auth.accessToken) return
+  try {
+    await ElMessageBox.confirm(
+      `撤销 ${row.owner.email} 创建的任务邀请？已接受的任务副本不受影响。`,
+      '撤销任务邀请',
+      { type: 'warning', confirmButtonText: '撤销', cancelButtonText: '取消' },
+    )
+  } catch {
     return
+  }
   loading.value = true
   try {
     await revokeAdminTaskInvitation(auth.accessToken, row.id)

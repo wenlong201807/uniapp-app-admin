@@ -4,6 +4,7 @@ import {
   ElButton,
   ElInput,
   ElMessage,
+  ElMessageBox,
   ElTable,
   ElTableColumn,
   ElTag,
@@ -11,6 +12,7 @@ import {
   ElOption,
 } from 'element-plus'
 import { Refresh, Delete } from '@element-plus/icons-vue'
+import { usePagedList } from '@/composables/usePagedList'
 import {
   getAdminPushDevices,
   revokeAdminPushDevice,
@@ -19,49 +21,37 @@ import {
 } from '@/services/admin-push-devices'
 import { useAdminAuthStore } from '@/stores/admin-auth'
 const auth = useAdminAuthStore()
-const loading = ref(false)
 const query = ref('')
 const platform = ref<PushPlatform | ''>('')
-const page = ref(1)
-const pageSize = 20
-const total = ref(0)
-const rows = ref<AdminPushDevice[]>([])
-function previousPage() {
-  if (page.value > 1) {
-    page.value -= 1
-    void load()
-  }
-}
-function nextPage() {
-  if (page.value * pageSize < total.value) {
-    page.value += 1
-    void load()
-  }
-}
-async function load() {
-  if (!auth.accessToken) return
-  loading.value = true
-  try {
-    const result = await getAdminPushDevices(auth.accessToken, {
-      page: page.value,
+const { rows, total, loading, canPrev, canNext, load, search, prev, next } = usePagedList(
+  async (page: number, pageSize: number) => {
+    const token = auth.accessToken
+    if (!token) throw new Error('未登录')
+    return getAdminPushDevices(token, {
+      page,
       pageSize,
       q: query.value,
       platform: platform.value || undefined,
     })
-    rows.value = result.items
-    total.value = result.total
-  } catch (error) {
-    ElMessage.error(error instanceof Error ? error.message : '推送设备加载失败')
-  } finally {
-    loading.value = false
-  }
-}
+  },
+  {
+    enabled: () => Boolean(auth.accessToken),
+    onError: (error) => {
+      ElMessage.error(error instanceof Error ? error.message : '推送设备加载失败')
+    },
+  },
+)
 async function revoke(row: AdminPushDevice) {
-  if (
-    !auth.accessToken ||
-    !window.confirm(`撤销 ${row.user.email} 的推送设备？该设备将停止接收通知。`)
-  )
+  if (!auth.accessToken) return
+  try {
+    await ElMessageBox.confirm(
+      `撤销 ${row.user.email} 的推送设备？该设备将停止接收通知。`,
+      '撤销推送设备',
+      { type: 'warning', confirmButtonText: '撤销', cancelButtonText: '取消' },
+    )
+  } catch {
     return
+  }
   try {
     await revokeAdminPushDevice(auth.accessToken, row.id)
     ElMessage.success('推送设备已撤销')
@@ -69,10 +59,6 @@ async function revoke(row: AdminPushDevice) {
   } catch (error) {
     ElMessage.error(error instanceof Error ? error.message : '推送设备撤销失败')
   }
-}
-function search() {
-  page.value = 1
-  void load()
 }
 onMounted(load)
 </script>
@@ -138,8 +124,8 @@ onMounted(load)
     >
     <div class="table-footer">
       <span>共 {{ total }} 个设备</span
-      ><ElButton text :disabled="page <= 1" @click="previousPage">上一页</ElButton
-      ><ElButton text :disabled="page * pageSize >= total" @click="nextPage">下一页</ElButton>
+      ><ElButton text :disabled="!canPrev" @click="prev">上一页</ElButton
+      ><ElButton text :disabled="!canNext" @click="next">下一页</ElButton>
     </div>
   </section>
 </template>

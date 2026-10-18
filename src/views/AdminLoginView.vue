@@ -163,7 +163,7 @@ async function submitBootstrap() {
         </ElTabPane>
       </ElTabs>
       <p class="login-security-note">
-        登录会话仅保存在当前浏览器内存中，关闭或刷新页面后需要重新登录。
+        登录凭证仅保存在当前标签页：刷新页面自动恢复会话，关闭标签页即退出。
       </p>
     </section>
   </main>

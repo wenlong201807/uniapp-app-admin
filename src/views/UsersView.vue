@@ -17,20 +17,16 @@ import {
   ElTableColumn,
 } from 'element-plus'
 import { useAdminAuthStore } from '@/stores/admin-auth'
+import { usePagedList } from '@/composables/usePagedList'
 import { getDepartments, type Department } from '@/services/admin-organization'
 import { getSystemUsers, updateSystemUser, type SystemUser } from '@/services/admin-system'
 const auth = useAdminAuthStore()
-const rows = ref<SystemUser[]>([]),
-  departments = ref<Department[]>([]),
-  loading = ref(false),
+const departments = ref<Department[]>([]),
   saving = ref(false),
-  error = ref(''),
   dialog = ref(false),
   q = ref(''),
   departmentId = ref(''),
-  selectedDepartment = ref<string | null>(null),
-  page = ref(1),
-  total = ref(0)
+  selectedDepartment = ref<string | null>(null)
 const editing = ref<SystemUser | null>(null)
 const canWrite = computed(
   () => auth.admin?.permissions.includes('admin:system:users:write') ?? false,
@@ -38,32 +34,17 @@ const canWrite = computed(
 const canDepartments = computed(
   () => auth.admin?.permissions.includes('admin:organization:departments') ?? false,
 )
-let revision = 0
-async function load() {
-  if (!auth.accessToken) return
-  const current = ++revision
-  loading.value = true
-  error.value = ''
-  try {
-    const result = await getSystemUsers(auth.accessToken, {
-      q: q.value,
-      departmentId: departmentId.value,
-      page: page.value,
-    })
-    if (current === revision) {
-      rows.value = result.items
-      total.value = result.total
-    }
-  } catch (cause) {
-    if (current === revision) error.value = cause instanceof Error ? cause.message : '用户加载失败'
-  } finally {
-    if (current === revision) loading.value = false
-  }
-}
-function search() {
-  page.value = 1
-  void load()
-}
+const { rows, total, page, loading, error, search, load } = usePagedList(
+  async (page: number) => {
+    const token = auth.accessToken
+    if (!token) throw new Error('未登录')
+    return getSystemUsers(token, { q: q.value, departmentId: departmentId.value, page })
+  },
+  {
+    enabled: () => Boolean(auth.accessToken),
+    errorFallback: '用户加载失败',
+  },
+)
 function open(row: SystemUser) {
   editing.value = row
   selectedDepartment.value = row.department?.id ?? null
@@ -119,7 +100,7 @@ onMounted(async () => {
 function resetFilters() {
   q.value = ''
   departmentId.value = ''
-  search()
+  void search()
 }
 </script>
 <template>
@@ -167,12 +148,14 @@ function resetFilters() {
         }}</template></ElTableColumn
       ><ElTableColumn label="微信登录" width="110"
         ><template #default="{ row }">{{
-          row.wechatIdentity ? '已关联' : '未关联'
+          row.wechatIdentity?.bound ? '已关联' : '未关联'
         }}</template></ElTableColumn
       >
       <ElTableColumn label="微信关联时间" min-width="180"
         ><template #default="{ row }">{{
-          row.wechatIdentity ? new Date(row.wechatIdentity.createdAt).toLocaleString('zh-CN') : '—'
+          row.wechatIdentity?.createdAt
+            ? new Date(row.wechatIdentity.createdAt).toLocaleString('zh-CN')
+            : '—'
         }}</template></ElTableColumn
       >
       <ElTableColumn label="最近微信登录" min-width="180"

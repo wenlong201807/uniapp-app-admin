@@ -12,6 +12,7 @@ import {
   ElTableColumn,
 } from 'element-plus'
 import { Edit, Refresh } from '@element-plus/icons-vue'
+import { usePagedList } from '@/composables/usePagedList'
 import {
   getAdminAiQuotas,
   getAdminAiSettings,
@@ -88,49 +89,18 @@ async function saveSettings() {
   }
 }
 
-const loading = ref(false)
 const query = ref('')
-const page = ref(1)
-const pageSize = ref(20)
-const total = ref(0)
-const rows = ref<AdminAiQuotaRow[]>([])
-let quotaRevision = 0
-
-async function load() {
-  if (!auth.accessToken) return
-  loading.value = true
-  const current = ++quotaRevision
-  const token = auth.accessToken
-  try {
-    const result = await getAdminAiQuotas(token, {
-      page: page.value,
-      pageSize: pageSize.value,
-      q: query.value,
-    })
-    if (current !== quotaRevision || token !== auth.accessToken) return
-    rows.value = result.items
-    total.value = result.total
-  } catch (error) {
-    toastError(error, '用户额度列表加载失败')
-  } finally {
-    if (current === quotaRevision) loading.value = false
-  }
-}
-
-async function search() {
-  page.value = 1
-  await load()
-}
-
-async function previousPage() {
-  page.value -= 1
-  await load()
-}
-
-async function nextPage() {
-  page.value += 1
-  await load()
-}
+const { rows, total, loading, canPrev, canNext, load, search, prev, next } = usePagedList(
+  async (page: number, pageSize: number) => {
+    const token = auth.accessToken
+    if (!token) throw new Error('未登录')
+    return getAdminAiQuotas(token, { page, pageSize, q: query.value })
+  },
+  {
+    enabled: () => Boolean(auth.accessToken),
+    onError: (error) => toastError(error, '用户额度列表加载失败'),
+  },
+)
 
 const quotaDialog = ref(false)
 const quotaSaving = ref(false)
@@ -276,8 +246,8 @@ onMounted(initialize)
     </ElTable>
     <div class="table-footer">
       <span>共 {{ total }} 个用户</span
-      ><ElButton text :disabled="page <= 1" @click="previousPage">上一页</ElButton
-      ><ElButton text :disabled="page * pageSize >= total" @click="nextPage">下一页</ElButton>
+      ><ElButton text :disabled="!canPrev" @click="prev">上一页</ElButton
+      ><ElButton text :disabled="!canNext" @click="next">下一页</ElButton>
     </div>
   </section>
 

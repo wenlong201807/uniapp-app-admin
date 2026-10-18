@@ -73,9 +73,16 @@ async function save() {
     if (editing.value)
       await updatePosition(auth.accessToken, editing.value.id, {
         ...form.value,
+        code: form.value.code.trim(),
+        name: form.value.name.trim(),
         expectedRevision: editing.value.revision,
       })
-    else await createPosition(auth.accessToken, form.value)
+    else
+      await createPosition(auth.accessToken, {
+        ...form.value,
+        code: form.value.code.trim(),
+        name: form.value.name.trim(),
+      })
     dialog.value = false
     await load()
     ElMessage.success('岗位已保存')

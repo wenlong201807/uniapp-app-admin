@@ -4,6 +4,7 @@ import {
   ElButton,
   ElInput,
   ElMessage,
+  ElMessageBox,
   ElOption,
   ElSelect,
   ElTable,
@@ -78,16 +79,22 @@ function move(delta: number) {
 }
 async function mutate(row: IntegrityReport, value: 'ACKNOWLEDGED' | 'FOLLOW_UP' | 'DELETE') {
   const token = auth.accessToken
-  if (
-    loading.value ||
-    !token ||
-    !window.confirm(
+  if (loading.value || !token) return
+  try {
+    await ElMessageBox.confirm(
       value === 'DELETE'
         ? '删除该报告？操作审计保留，不影响用户登录或设备密钥。'
         : '记录人工复核结果？报告仍为未验证的客户端线索，不表示设备可信。',
+      value === 'DELETE' ? '删除报告' : '记录复核',
+      {
+        type: 'warning',
+        confirmButtonText: value === 'DELETE' ? '删除' : '记录',
+        cancelButtonText: '取消',
+      },
     )
-  )
+  } catch {
     return
+  }
   loading.value = true
   try {
     if (value === 'DELETE') await deleteIntegrityReport(token, row.id)

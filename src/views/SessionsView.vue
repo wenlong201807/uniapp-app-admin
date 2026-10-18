@@ -1,7 +1,16 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
-import { ElButton, ElInput, ElMessage, ElTable, ElTableColumn, ElTag } from 'element-plus'
+import {
+  ElButton,
+  ElInput,
+  ElMessage,
+  ElMessageBox,
+  ElTable,
+  ElTableColumn,
+  ElTag,
+} from 'element-plus'
 import { Delete, Refresh } from '@element-plus/icons-vue'
+import { usePagedList } from '@/composables/usePagedList'
 import {
   getAdminSessions,
   revokeAdminSession,
@@ -9,12 +18,20 @@ import {
 } from '@/services/admin-sessions'
 import { useAdminAuthStore } from '@/stores/admin-auth'
 const auth = useAdminAuthStore()
-const loading = ref(false)
 const query = ref('')
-const page = ref(1)
-const pageSize = ref(20)
-const total = ref(0)
-const rows = ref<AdminSessionGroup[]>([])
+const { rows, total, loading, canPrev, canNext, load, search, prev, next } = usePagedList(
+  async (page: number, pageSize: number) => {
+    const token = auth.accessToken
+    if (!token) throw new Error('未登录')
+    return getAdminSessions(token, { page, pageSize, q: query.value })
+  },
+  {
+    enabled: () => Boolean(auth.accessToken),
+    onError: (error) => {
+      ElMessage.error(error instanceof Error ? error.message : '会话列表加载失败')
+    },
+  },
+)
 function date(value: string | null) {
   return value ? new Date(value).toLocaleString('zh-CN') : '旧版会话，时间未知'
 }
@@ -23,37 +40,17 @@ function ttl(value: number) {
     ? `${Math.max(1, Math.ceil(value / 60))} 分钟`
     : `${Math.ceil(value / 3600)} 小时`
 }
-async function load() {
-  if (!auth.accessToken) return
-  loading.value = true
-  try {
-    const result = await getAdminSessions(auth.accessToken, {
-      page: page.value,
-      pageSize: pageSize.value,
-      q: query.value,
-    })
-    rows.value = result.items
-    total.value = result.total
-  } catch (error) {
-    ElMessage.error(error instanceof Error ? error.message : '会话列表加载失败')
-  } finally {
-    loading.value = false
-  }
-}
-async function search() {
-  page.value = 1
-  await load()
-}
-async function turnPage(direction: 1 | -1) {
-  page.value += direction
-  await load()
-}
 async function revoke(group: AdminSessionGroup, sessionId: string) {
-  if (
-    !auth.accessToken ||
-    !window.confirm(`撤销 ${group.user.email} 的这台设备会话？该设备需要重新登录。`)
-  )
+  if (!auth.accessToken) return
+  try {
+    await ElMessageBox.confirm(
+      `撤销 ${group.user.email} 的这台设备会话？该设备需要重新登录。`,
+      '撤销会话',
+      { type: 'warning', confirmButtonText: '撤销', cancelButtonText: '取消' },
+    )
+  } catch {
     return
+  }
   try {
     await revokeAdminSession(auth.accessToken, group.user.id, sessionId)
     ElMessage.success('会话已撤销')
@@ -124,8 +121,8 @@ onMounted(load)
     >
     <div class="table-footer">
       <span>匹配 {{ total }} 个用户</span
-      ><ElButton text :disabled="page <= 1" @click="turnPage(-1)">上一页</ElButton
-      ><ElButton text :disabled="page * pageSize >= total" @click="turnPage(1)">下一页</ElButton>
+      ><ElButton text :disabled="!canPrev" @click="prev">上一页</ElButton
+      ><ElButton text :disabled="!canNext" @click="next">下一页</ElButton>
     </div>
     <p class="muted privacy-note">
       只显示会话标识前缀和时间，IP 仅显示脱敏前缀；不展示 refresh token、access token 或生物特征。

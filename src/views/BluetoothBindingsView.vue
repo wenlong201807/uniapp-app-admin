@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
-import { ElButton, ElInput, ElMessage, ElTable, ElTableColumn } from 'element-plus'
+import { ElButton, ElInput, ElMessage, ElMessageBox, ElTable, ElTableColumn } from 'element-plus'
 import { Refresh, Delete } from '@element-plus/icons-vue'
 import {
   getAdminBluetoothBindings,
@@ -43,18 +43,20 @@ function movePage(delta: number) {
   void load()
 }
 async function remove(row: AdminBluetoothBinding) {
-  if (
-    loading.value ||
-    !auth.accessToken ||
-    !window.confirm(
+  if (loading.value || !auth.accessToken) return
+  try {
+    await ElMessageBox.confirm(
       '撤销用户 ' +
         row.owner.email +
         ' 的外设关联“' +
         row.name +
         '”？在线客户端下次检查时会断开；这无法远程关闭手机蓝牙。',
+      '撤销外设关联',
+      { type: 'warning', confirmButtonText: '撤销', cancelButtonText: '取消' },
     )
-  )
+  } catch {
     return
+  }
   loading.value = true
   try {
     await revokeAdminBluetoothBinding(auth.accessToken, row.id)

@@ -123,8 +123,8 @@ async function saveRole() {
       })
     else
       await createAdminRole(auth.accessToken, {
-        code: form.value.code,
-        name: form.value.name,
+        code: form.value.code.trim(),
+        name: form.value.name.trim(),
         description: form.value.description,
         permissions: form.value.permissions,
         dataScope: form.value.dataScope,
