@@ -29,7 +29,9 @@ export interface AdminMember {
 }
 export const getAdminRoles = (token: string, q = '') =>
   request<{ items: AdminRole[]; total: number }>(
-    `/admin/rbac/roles${q ? `?q=${encodeURIComponent(q)}` : ''}`,
+    // pageSize=500 keeps the roles table and every role dropdown rendering the
+    // full list; the server endpoint is genuinely paginated when data grows.
+    `/admin/rbac/roles?q=${encodeURIComponent(q)}&page=1&pageSize=500`,
     { token },
   )
 export const getAdminPermissions = (token: string) =>
@@ -59,7 +61,9 @@ export const updateAdminRole = (
 ) => request<AdminRole>(`/admin/rbac/roles/${id}`, { method: 'PATCH', token, body })
 export const getAdminMembers = (token: string, q = '') =>
   request<{ items: AdminMember[]; total: number }>(
-    `/admin/rbac/admins${q ? `?q=${encodeURIComponent(q)}` : ''}`,
+    // Same show-all semantics as roles until the administrators table grows a
+    // pagination UI.
+    `/admin/rbac/admins?q=${encodeURIComponent(q)}&page=1&pageSize=500`,
     { token },
   )
 export const updateAdminMember = (
