@@ -9,7 +9,7 @@ import {
   type AdminAccount,
   type AdminLoginInput,
 } from '@/services/admin-auth'
-import { ApiError } from '@/services/http'
+import { ApiError, setUnauthorizedHandler } from '@/services/http'
 
 // The refresh token lives in sessionStorage: it survives page reloads within the
 // tab (no forced re-login on F5) and is burned automatically when the tab closes.
@@ -152,6 +152,19 @@ export const useAdminAuthStore = defineStore('admin-auth', () => {
     clear()
     if (token) await logoutAdmin(token)
   }
+
+  // Page-level requests that hit an expired access token heal themselves:
+  // refresh once through the single-flight above and let http.ts replay.
+  // A failed refresh clears the session and returns null so the original
+  // 401 surfaces to the caller as before.
+  setUnauthorizedHandler(async () => {
+    try {
+      await refresh()
+      return accessToken.value
+    } catch {
+      return null
+    }
+  })
 
   return {
     admin,

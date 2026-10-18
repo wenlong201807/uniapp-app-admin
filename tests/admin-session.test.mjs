@@ -44,6 +44,7 @@ async function login() {
 
 before(async () => {
   server = await createServer({
+    mode: 'test',
     server: { middlewareMode: true, hmr: false, ws: false },
     appType: 'custom',
   })
@@ -155,7 +156,11 @@ test('navigation revalidates identity and concurrent checks share one request', 
   pending.resolve(response(admin))
   assert.deepEqual(await Promise.all([first, second]), [true, true])
   globalThis.fetch = async () => response(null, 401)
-  await assert.rejects(auth.ensureSession(), ApiError)
+  // Since the 401 self-heal wiring, a failed identity check first attempts a
+  // single-flight refresh; when that also fails the session is cleared and
+  // ensureSession resolves false (state changed) instead of rejecting. The
+  // router guard sends the admin to the login page either way.
+  assert.equal(await auth.ensureSession(), false)
   assert.equal(auth.isAuthenticated, false)
 })
 

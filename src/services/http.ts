@@ -10,6 +10,18 @@ export class ApiError extends Error {
   }
 }
 
+type UnauthorizedHandler = () => Promise<string | null>
+
+// Registered by the auth store. When a request that carried a token is
+// rejected with 401 (token expired while the admin stayed on one page), the
+// request is replayed once with the refreshed token so pages self-heal
+// instead of dead-ending until the next navigation.
+let unauthorizedHandler: UnauthorizedHandler | null = null
+
+export function setUnauthorizedHandler(handler: UnauthorizedHandler | null): void {
+  unauthorizedHandler = handler
+}
+
 type RequestOptions = Omit<RequestInit, 'body'> & {
   body?: unknown
   token?: string
@@ -17,6 +29,14 @@ type RequestOptions = Omit<RequestInit, 'body'> & {
 }
 
 export async function request<T>(path: string, options: RequestOptions = {}): Promise<T> {
+  return performRequest(path, options, false)
+}
+
+async function performRequest<T>(
+  path: string,
+  options: RequestOptions,
+  retried: boolean,
+): Promise<T> {
   const { body, token, timeoutMs = 10000, ...init } = options
   const headers = new Headers(init.headers)
   headers.set('Accept', 'application/json')
@@ -38,6 +58,12 @@ export async function request<T>(path: string, options: RequestOptions = {}): Pr
     })
     const payload: unknown = await response.json().catch(() => null)
     if (!response.ok) {
+      if (response.status === 401 && !retried && token && unauthorizedHandler) {
+        const refreshed: string | null = await unauthorizedHandler().catch(() => null)
+        if (typeof refreshed === 'string' && refreshed && refreshed !== token) {
+          return performRequest<T>(path, { ...options, token: refreshed }, true)
+        }
+      }
       const message = isRecord(payload) ? payload.message : undefined
       throw new ApiError(
         typeof message === 'string'

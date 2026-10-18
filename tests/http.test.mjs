@@ -5,6 +5,7 @@ import { createServer } from 'vite'
 let server
 let request
 let ApiError
+let setUnauthorizedHandler
 const originalFetch = globalThis.fetch
 const response = (body, status = 200) => new Response(JSON.stringify(body), { status })
 // Mimics native fetch abort semantics: a pending request rejects once its signal
@@ -21,11 +22,16 @@ const hangingFetch = () => (url, options) =>
   })
 
 before(async () => {
+  // mode: 'test' keeps the suite hermetic: without it Vite defaults to
+  // development mode and loads a local .env.development.local (if present)
+  // into import.meta.env, which changed apiBaseUrl and broke these tests.
   server = await createServer({
+    mode: 'test',
     server: { middlewareMode: true, hmr: false, ws: false },
     appType: 'custom',
   })
-  ;({ request, ApiError } = await server.ssrLoadModule('/src/services/http.ts'))
+  ;({ request, ApiError, setUnauthorizedHandler } =
+    await server.ssrLoadModule('/src/services/http.ts'))
 })
 after(async () => {
   globalThis.fetch = originalFetch
@@ -104,4 +110,55 @@ test('a pre-aborted caller signal rejects immediately', async () => {
     assert.match(error.message, /取消或超时/)
     return true
   })
+})
+
+test('a 401 with a registered handler retries once with the refreshed token', async () => {
+  const authorizations = []
+  globalThis.fetch = async (_url, options) => {
+    authorizations.push(options.headers.get('Authorization'))
+    return authorizations.length === 1
+      ? response({ message: 'expired' }, 401)
+      : response({ data: { ok: true } })
+  }
+  setUnauthorizedHandler(async () => 'token-two')
+  try {
+    const result = await request('/admin/routes', { token: 'token-one' })
+    assert.deepEqual(result, { ok: true })
+    assert.deepEqual(authorizations, ['Bearer token-one', 'Bearer token-two'])
+  } finally {
+    setUnauthorizedHandler(null)
+  }
+})
+
+test('a 401 after a failed refresh still throws the original ApiError', async () => {
+  globalThis.fetch = async () => response({ message: 'expired' }, 401)
+  setUnauthorizedHandler(async () => null)
+  try {
+    await assert.rejects(request('/admin/routes', { token: 'token-one' }), (error) => {
+      assert.ok(error instanceof ApiError)
+      assert.equal(error.status, 401)
+      assert.equal(error.message, 'expired')
+      return true
+    })
+  } finally {
+    setUnauthorizedHandler(null)
+  }
+})
+
+test('a 401 without a token is never replayed through the handler', async () => {
+  const calls = []
+  globalThis.fetch = async () => {
+    calls.push(1)
+    return response({ message: 'unauthenticated' }, 401)
+  }
+  setUnauthorizedHandler(async () => 'should-not-be-used')
+  try {
+    await assert.rejects(request('/admin/routes'), (error) => {
+      assert.equal(error.status, 401)
+      return true
+    })
+    assert.equal(calls.length, 1)
+  } finally {
+    setUnauthorizedHandler(null)
+  }
 })
