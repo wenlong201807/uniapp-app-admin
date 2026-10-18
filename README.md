@@ -18,12 +18,14 @@ pnpm dev
 
 访问 `http://127.0.0.1:5174`。管理端使用 5174，避免与客户端 5173 冲突。开发时 `/api` 默认代理到服务端 Nginx 入口 `http://127.0.0.1:8086`。
 
-如需调整，复制 `.env.example` 为 `.env.local` 并修改：
+如需调整，复制 `.env.example` 为 `.env.local` 并修改。项目环境模板还提供 `.env.development.example` 和 `.env.production.example`：
 
 ```dotenv
 VITE_API_BASE_URL=/api/v1
 API_PROXY_TARGET=http://127.0.0.1:8086
 ```
+
+本地 HTTPS 联调使用服务端 `scripts/setup-local-https.mjs` 自动生成的 `.env.development.local`；生产构建使用 `VITE_API_BASE_URL=https://app.wetogether.best/api/v1`。所有 `VITE_` 变量会进入浏览器构建产物，不应包含密钥。
 
 Vite 开发代理避免浏览器跨域；如果直接连接其他 API 域名，需要在服务端 `CORS_ORIGINS` 中配置管理端来源。所有 `VITE_` 变量会进入浏览器构建产物，不应包含密钥。
 

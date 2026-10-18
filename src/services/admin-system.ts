@@ -19,7 +19,14 @@ export interface SystemSetting {
   revision: number
 }
 export type SettingInput = Omit<SystemSetting, 'id' | 'revision'>
+export interface WechatIdentitySummary {
+  provider: 'wechat'
+  bound: boolean
+  createdAt: string
+  lastUsedAt: string | null
+}
 export interface SystemUser {
+  wechatIdentity: WechatIdentitySummary | null
   id: string
   email: string
   displayName: string

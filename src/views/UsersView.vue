@@ -160,10 +160,29 @@ function resetFilters() {
       :data="rows"
       stripe
       ><ElTableColumn prop="displayName" label="姓名" min-width="120" /><ElTableColumn
-        prop="email"
         label="邮箱"
         min-width="220"
-      /><ElTableColumn label="部门" min-width="140"
+        ><template #default="{ row }">{{
+          row.email.endsWith('@users.invalid') ? '未设置' : row.email
+        }}</template></ElTableColumn
+      ><ElTableColumn label="微信登录" width="110"
+        ><template #default="{ row }">{{
+          row.wechatIdentity ? '已关联' : '未关联'
+        }}</template></ElTableColumn
+      >
+      <ElTableColumn label="微信关联时间" min-width="180"
+        ><template #default="{ row }">{{
+          row.wechatIdentity ? new Date(row.wechatIdentity.createdAt).toLocaleString('zh-CN') : '—'
+        }}</template></ElTableColumn
+      >
+      <ElTableColumn label="最近微信登录" min-width="180"
+        ><template #default="{ row }">{{
+          row.wechatIdentity?.lastUsedAt
+            ? new Date(row.wechatIdentity.lastUsedAt).toLocaleString('zh-CN')
+            : '—'
+        }}</template></ElTableColumn
+      >
+      <ElTableColumn label="部门" min-width="140"
         ><template #default="{ row }">{{
           row.department?.name || '未分配'
         }}</template></ElTableColumn
