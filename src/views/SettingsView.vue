@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import WechatStatusPanel from '@/components/WechatStatusPanel.vue'
 import { onMounted, ref } from 'vue'
 import {
   ElAlert,
@@ -130,6 +131,7 @@ onMounted(load)
       >新建{{ kind === 'DICTIONARY' ? '字典' : '参数' }}</ElButton
     >
   </div>
+  <WechatStatusPanel />
   <section class="panel">
     <div class="settings-toolbar">
       <ElRadioGroup v-model="kind" @change="load"

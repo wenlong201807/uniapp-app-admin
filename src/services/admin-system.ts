@@ -91,3 +91,12 @@ export const updateSystemUser = (
 ) => request<SystemUser>(`/admin/system/users/${id}`, { method: 'PATCH', token, body })
 export const getDashboard = (token: string) =>
   request<Dashboard>('/admin/system/dashboard', { token })
+
+export interface WechatStatus {
+  wechat: { configured: boolean }
+  wecom: { configured: boolean; customerMoments: boolean }
+  origins: { wechat: string[]; wecom: string[] }
+  checkedAt: string
+}
+export const getWechatStatus = (token: string) =>
+  request<WechatStatus>('/admin/wechat/status', { token })
